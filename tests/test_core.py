@@ -178,3 +178,78 @@ def test_phrase_feats_nan_safe():
     f = {"syl": np.ones(6), "dur": np.full(6, 0.25), "pitch": np.array([np.nan] * 3 + [0, 2, 4.0])}
     out = E.with_phrases(f, np.array([0, 0, 0, 1, 1, 1]))
     assert np.isnan(out["pitch_spread_phr"][:3]).all() and np.isfinite(out["rate_phr"]).all()
+
+
+def _phrase_ref(tempo, pause_after_w4, seed, W=10):
+    """Minimal ref dict with syl/dur/pitch and a configurable pause boundary.
+
+    Pause is placed after word 4 (index 4), creating a 5+5 equal split so that
+    nanmedian of the per-word broadcast phrase-rate array equals the midpoint of
+    the two phrase rates (not biased by phrase length).
+    """
+    r = np.random.default_rng(seed)
+    syl = np.ones(W)
+    dur = np.full(W, 0.25)
+    pause = np.zeros(W)
+    pause[4] = pause_after_w4
+    pitch = r.normal(0, 1, W)
+    rate = syl / dur * tempo
+    pitch_range = np.full(W, 6.0) + r.normal(0, 0.1, W)
+    loud = r.normal(0, 0.3, W)
+    prom_pitch = r.normal(-1, 0.2, W)
+    prom_loud = r.normal(-1, 0.2, W)
+    return {"syl": syl, "dur": dur, "pause": pause, "pitch": pitch,
+            "rate": rate, "pitch_range": pitch_range, "loud": loud,
+            "prom_pitch": prom_pitch, "prom_loud": prom_loud}
+
+
+def test_deviations_phrase_gating():
+    """phrase=False: phrase channels all zero; phrase=True: rel channels zero, sped-up phrase flagged."""
+    W = 10
+    # 4 refs all pause 0.3 s after word 4 → consensus phrase boundary → equal 5+5 split
+    refs = [_phrase_ref(1.0, 0.3, s, W) for s in range(4)]
+    env = E.build(refs)
+
+    # (a) build stores phrase_id
+    assert env.phrase_id is not None and len(env.phrase_id) == W
+
+    # attempt: phrase 1 (words 5-9) compressed to dur=0.1 s/word (refs use 0.25 s) →
+    # phrase 1 rate = 10 syl/s vs phrase 0 rate = 4.0 syl/s.
+    # Equal 5+5 split → nanmedian of broadcast = (4+10)/2 = 7.0 → rate_phr[5:] ≈ 1.43 > 1.0
+    att = _phrase_ref(1.0, 0.3, 99, W)
+    att["syl"] = np.ones(W)
+    att["dur"] = np.full(W, 0.25)
+    att["dur"][5:] = 0.1  # shorten phrase 1 duration → higher phrase rate
+
+    p = params()
+
+    # (b) phrase=False: phrase channels are all zero
+    dev_off = E.deviations(att, env, p.margin, p.scale, relative=True, phrase=False)
+    for key in [("rate_phr", +1), ("rate_phr", -1), ("pitch_spread_phr", -1)]:
+        assert np.all(dev_off[key] == 0), f"phrase=False: expected zeros for {key}"
+
+    # (c) phrase=True: rel channels zeroed; rate_phr+ is >0 on the sped-up phrase
+    dev_on = E.deviations(att, env, p.margin, p.scale, relative=True, phrase=True)
+    for key in [("rate_rel", +1), ("rate_rel", -1), ("pitch_range_rel", -1)]:
+        assert np.all(dev_on[key] == 0), f"phrase=True: expected zeros for rel channel {key}"
+    assert dev_on[("rate_phr", +1)][5:].max() > 0, "phrase=True: sped-up phrase should flag rate_phr+"
+
+
+def test_margin_diffs_no_keyerror():
+    """_margin_diffs must not raise KeyError even for records without syl/dur/phrase keys."""
+    from cadence.evaluate import _margin_diffs
+    W = 8
+    pid = np.zeros(W, int)
+
+    # records lacking syl/dur (pre-Task-2 format): phrase features will be NaN → diffs empty
+    base = {k: np.ones(W) for k in E.ENV_FEATURES if k not in E.PHRASE_FEATURES}
+    base["pitch"] = np.zeros(W)
+    diffs_no_syl = _margin_diffs(base, base, pid)
+    assert "rate_phr" in diffs_no_syl  # key must exist (may be empty list)
+
+    # records WITH syl/dur: phrase features are finite → diffs non-empty
+    full = dict(base)
+    full["syl"] = np.ones(W)
+    full["dur"] = np.full(W, 0.3)
+    diffs_with_syl = _margin_diffs(full, full, pid)
+    assert "rate_phr" in diffs_with_syl

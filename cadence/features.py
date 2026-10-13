@@ -189,7 +189,10 @@ def word_features(words: list[dict], c: dict, norm: str = "level") -> dict[str, 
     from .envelope import add_derived
     feats = add_derived(feats)
     if norm == "zscore":  # v1's bug, kept for the ablation only
+        _NO_ZSCORE = {"syl", "dur"}  # counts/durations — not acoustic signals, never z-scored
         for k, v in feats.items():
+            if k in _NO_ZSCORE:
+                continue
             sd = np.nanstd(v)
             feats[k] = (v - np.nanmean(v)) / (sd if sd > 0 else 1.0)
     return feats

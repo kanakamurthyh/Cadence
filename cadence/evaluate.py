@@ -20,7 +20,7 @@ from . import features
 from .audio import read_wav
 from .baselines import generic_norms
 from .detect import DIMENSION, DIMENSIONS, Params, detect, scores
-from .envelope import ENV_FEATURES, FLAW_TYPES, add_derived, build, fwd, widths
+from .envelope import ENV_FEATURES, FLAW_TYPES, add_derived, build, fwd, widths, with_phrases
 from .metrics import aggregate, false_alarms_per_min, score_clip, spearman
 from .pipeline import REFS, ROOT
 
@@ -106,18 +106,32 @@ def duration_min(words) -> float:
 
 # -- calibration ----------------------------------------------------------------
 
+def _margin_diffs(fr: dict, fn: dict, pid: np.ndarray) -> dict[str, list[float]]:
+    """Per-feature list of |fwd(fr[f]) - fwd(fn[f])| for one ref/null-edit pair.
+
+    Applies with_phrases so phrase features (rate_phr, pitch_spread_phr) are present
+    even when the loaded records pre-date the phrase-feature update.
+    """
+    fr = with_phrases(fr, pid)
+    fn = with_phrases(fn, pid)
+    diffs: dict[str, list[float]] = {f: [] for f in ENV_FEATURES}
+    for f in ENV_FEATURES:
+        d = np.abs(fwd(f, fr[f]) - fwd(f, fn[f]))
+        diffs[f] += list(d[np.isfinite(d)])
+    return diffs
+
+
 def fit_margin_scale(cfg: Config, tid: str = "T1") -> tuple[dict, dict]:
+    env = build([record("ref", tid, g, cfg.norm)[1] for g in selection(tid)["good"]])
     margin = {f: 0.0 for f in ENV_FEATURES}
     if cfg.margin:
-        diffs = {f: [] for f in ENV_FEATURES}
+        all_diffs: dict[str, list[float]] = {f: [] for f in ENV_FEATURES}
         for g in selection(tid)["good"]:
             _, fr, _ = record("ref", tid, g, cfg.norm)
             _, fn, _ = record("clip", tid, f"{tid}_null_{g}", cfg.norm)
-            for f in ENV_FEATURES:
-                d = np.abs(fwd(f, fr[f]) - fwd(f, fn[f]))
-                diffs[f] += list(d[np.isfinite(d)])
-        margin = {f: float(np.percentile(v, 95)) if v else 0.0 for f, v in diffs.items()}
-    env = build([record("ref", tid, g, cfg.norm)[1] for g in selection(tid)["good"]])
+            for f, vals in _margin_diffs(fr, fn, env.phrase_id).items():
+                all_diffs[f] += vals
+        margin = {f: float(np.percentile(v, 95)) if v else 0.0 for f, v in all_diffs.items()}
     return margin, widths(env)
 
 
