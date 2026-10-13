@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: Task 2 phrase segmentation and phrase-level features implemented)
+> Last updated: 2026-10-14 (session 10: Task 2 Fix Round 2 — phrase-median normalization corrected)
 
 ## 1. What this project is
 
@@ -460,3 +460,14 @@ memory pressure.
   - `tests/test_core.py`: `feats()` fixture initialises PHRASE_FEATURES to NaN (no syl/dur);
     four new tests: `test_phrase_ids_consensus`, `test_phrase_ids_no_consensus_pause`,
     `test_word_basics_backfilled`, `test_phrase_feats_nan_safe`. 15 tests pass, 0 warnings.
+- **2026-10-14 (session 10, Task 2 Fix Round 2): phrase-median normalization corrected.**
+  - `envelope.py::with_phrases`: normalization now uses `np.nanmedian` over one value per
+    phrase (first element per phrase, since rate/spread is broadcast-constant within a phrase).
+    Previously used `np.nanmedian` of the full per-word broadcast array, which is word-weighted;
+    the longer phrase dominated the median and would yield rate_phr ≈ 1.0 for unequal splits.
+  - `tests/test_core.py`: `test_deviations_phrase_gating` reworked with 4+4+12-word phrases;
+    the 12-word phrase is the sped-up one — asserts rate_phr > 1 and d > 0 there.
+    `test_with_phrases_normalizes_by_phrase_median` added: 2+8-word split with rates 2.0/4.0
+    → phrase-median = 3.0 → rate_phr = 2/3 and 4/3 (not 0.5/1.0 as word-median would give).
+    `_phrase_ref` helper signature simplified (removed `tempo`/`pause_after_w4`, supports
+    `pause_idxs` tuple for multi-boundary refs). 25 tests pass, 0 RuntimeWarnings.
