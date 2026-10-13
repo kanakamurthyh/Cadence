@@ -294,6 +294,10 @@ def test_v3_phrase_pace_flags_rushed_phrase_trimmed():
                phrase_channels=True)
     hit = [r for r in detect(att, words, env, p) if r["type"] == "pace"]
     assert hit and 10 <= hit[0]["w0"] <= 13 and 15 <= hit[0]["w1"] <= 19
+    # pinned: phrase 10-19 is trimmed to the rushed words 12-16
+    assert hit[0]["feature"] == "rate_phr" and (hit[0]["w0"], hit[0]["w1"]) == (12, 16)
+    from cadence.detect import explain
+    assert "phrase speaking rate relative to your own pace" in explain(hit[0], att, words, env)
 
 
 def test_explain_phrase_region():
@@ -343,5 +347,46 @@ def test_v3_pitch_spread_phrase_flags_flattened_phrase_as_monotone():
                relative_channels=True, stress_floor=True, phrase_channels=True)
     hit = [r for r in detect(att, words, env, p) if r["feature"] == "pitch_spread_phr"]
     assert hit and hit[0]["type"] == "monotone"
-    assert hit[0]["w0"] >= 10 and hit[0]["w1"] <= 19
+    # pinned: phrase 10-19 trimmed to words whose own pitch_range_rel is below the envelope
+    assert (hit[0]["w0"], hit[0]["w1"]) == (12, 19)
     assert "phrase pitch movement relative to your own" in explain(hit[0], att, words, env)
+
+
+def _v3_params():
+    return Params(margin={f: 0.0 for f in E.ENV_FEATURES}, scale={f: 0.3 for f in E.ENV_FEATURES},
+                  tau={t: 1.0 for t in E.FLAW_TYPES}, relative_channels=True, stress_floor=True,
+                  phrase_channels=True)
+
+
+def test_v3_phrase_trim_falls_back_to_full_phrase():
+    """Phrase 10-19 is spoken faster (shorter durations) but every word's own rate_rel stays
+    inside the refs' word-level envelope: no word to trim to, so the whole phrase is kept."""
+    refs = [_phr_reader(t, s) for s, t in enumerate([3.0, 3.6, 4.2, 4.8, 5.4])]
+    env = E.build(refs)
+    att = _phr_reader(3.0, 0)  # same word rates as refs[0]
+    att["dur"][10:20] /= 1.8
+    words = [{"word": f"w{i}", "start": i * 0.4, "end": i * 0.4 + 0.35} for i in range(30)]
+    p = _v3_params()
+    wd = E.deviations(att, env, p.margin, p.scale, relative=True, stress_floor=True)
+    assert not wd[("rate_rel", 1)][10:20].any()
+    hit = [r for r in detect(att, words, env, p) if r["type"] == "pace"]
+    assert hit and hit[0]["feature"] == "rate_phr" and (hit[0]["w0"], hit[0]["w1"]) == (10, 19)
+
+
+def test_v3_phrase_trim_keeps_words_won_by_other_channels():
+    """Only phrase-channel words are filtered by word-level rate_rel. Word 11 is won by the
+    absolute slow-rate channel (rate_rel+ is 0 there) and must stay; words 14-16 are the
+    rushed ones. Filtering every word would give (14, 16)."""
+    refs = [_phr_reader(t, s) for s, t in enumerate([3.0, 3.6, 4.2, 4.8, 5.4])]
+    env = E.build(refs)
+    att = _phr_reader(3.0, 0)
+    att["dur"][10:20] /= 1.8
+    att["rate"][14:17] *= 1.8
+    att["rate"][11] = 1.0
+    words = [{"word": f"w{i}", "start": i * 0.4, "end": i * 0.4 + 0.35} for i in range(30)]
+    p = _v3_params()
+    d, ch = E.by_type(E.deviations(att, env, p.margin, p.scale, relative=True, stress_floor=True,
+                                   phrase=True))["pace"]
+    assert E.CHANNELS[ch[11]][:2] == ("rate", -1)
+    hit = [r for r in detect(att, words, env, p) if r["type"] == "pace"]
+    assert hit and hit[0]["feature"] == "rate_phr" and (hit[0]["w0"], hit[0]["w1"]) == (11, 16)

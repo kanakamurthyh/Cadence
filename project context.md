@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: Task 3 — detector v3 phrase channels, trimmed regions, explanations)
+> Last updated: 2026-10-14 (session 10: Task 3 fix round 1 — phrase trimming pinned; only phrase-channel words trimmed)
 
 ## 1. What this project is
 
@@ -486,3 +486,10 @@ memory pressure.
   - Tests: four new (rushed phrase flagged and trimmed, phrase explanation, flag off never
     yields phrase regions, flattened phrase flagged as monotone). 29 tests pass, 0 warnings.
   - No calibration / evaluation run yet (long job; needs audio data).
+- **2026-10-14 (session 10, Task 3 fix round 1): phrase trimming pinned.**
+  - `detect.py`: trimming now filters only words whose winning channel is a phrase channel;
+    words in the region won by another channel (e.g. absolute `rate`) are always kept.
+  - Tests: exact trimmed spans pinned (pace 12-16, monotone 12-19); `rate_phr` explanation text
+    asserted; new `test_v3_phrase_trim_falls_back_to_full_phrase` (10-19 kept) and
+    `test_v3_phrase_trim_keeps_words_won_by_other_channels` (11-16, not 14-16). Checked that
+    disabling trimming or filtering every word makes tests fail. 31 tests pass, 0 warnings.

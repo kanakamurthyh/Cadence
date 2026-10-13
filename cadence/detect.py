@@ -98,8 +98,10 @@ def detect(x: dict, words: list[dict], env: Envelope, p: Params, types=None) -> 
             idx = [i for i in range(a, b + 1) if d[i] > 0] or list(range(a, b + 1))
             dom = int(np.bincount(ch[idx], weights=d[idx] + 1e-9).argmax())
             if word_dev is not None and CHANNELS[dom][0] in PHRASE_FEATURES:
+                # only words won by a phrase channel are filtered; words won by another
+                # channel (e.g. absolute rate) deviate on their own and are always kept
                 wd = word_dev[PHRASE_TRIM[CHANNELS[dom][:2]]]
-                idx = [i for i in idx if wd[i] > 0] or idx
+                idx = [i for i in idx if CHANNELS[ch[i]][0] not in PHRASE_FEATURES or wd[i] > 0] or idx
             spans = [channel_span(ch[i], i, words) for i in idx]
             regions.append({
                 "type": typ, "w0": idx[0], "w1": idx[-1],
