@@ -1,0 +1,24 @@
+{
+ "source": "lv13668_18_scott_mcmullan",
+ "labels": [
+  {
+   "type": "pace",
+   "severity": 4,
+   "w0": 101,
+   "w1": 106,
+   "subtype": "rushed",
+   "param": 0.62,
+   "start": 37.515,
+   "end": 38.7612
+  },
+  {
+   "type": "missing_pause",
+   "severity": 5,
+   "w0": 93,
+   "w1": 94,
+   "param": 1.0,
+   "start": 34.125,
+   "end": 34.885
+  }
+ ]
+}

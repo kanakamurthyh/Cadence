@@ -1,0 +1,53 @@
+[
+ {
+  "reader": "lv13668_07_graham_scott",
+  "single_reference_flags": 1,
+  "envelope_flags": 0,
+  "single_pause_flags": [
+   [
+    "misplaced_pause",
+    "go"
+   ]
+  ]
+ },
+ {
+  "reader": "lv13668_02_christine_rojas",
+  "single_reference_flags": 1,
+  "envelope_flags": 0,
+  "single_pause_flags": [
+   [
+    "missing_pause",
+    "go"
+   ]
+  ]
+ },
+ {
+  "reader": "lv13668_08_hypatia",
+  "single_reference_flags": 1,
+  "envelope_flags": 0,
+  "single_pause_flags": [
+   [
+    "missing_pause",
+    "go"
+   ]
+  ]
+ },
+ {
+  "reader": "lv13668_11_larry_wilson",
+  "single_reference_flags": 0,
+  "envelope_flags": 2,
+  "single_pause_flags": []
+ },
+ {
+  "reader": "lv13668_01_bruce_kachuk",
+  "single_reference_flags": 0,
+  "envelope_flags": 2,
+  "single_pause_flags": []
+ },
+ {
+  "reader": "lv13668_12_maria_kasper",
+  "single_reference_flags": 0,
+  "envelope_flags": 2,
+  "single_pause_flags": []
+ }
+]

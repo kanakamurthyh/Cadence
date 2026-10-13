@@ -1,0 +1,37 @@
+{
+ "good": [
+  "lv1452_11_jennifer_rowan",
+  "lv1452_13_katie_gibboney",
+  "lv1452_12_jennamay",
+  "lv1452_24_ted_doolittle",
+  "lv1452_01_alan_davis_drake_1945_20",
+  "lv1452_20_robert_scott"
+ ],
+ "ranking": [
+  "lv1452_11_jennifer_rowan",
+  "lv1452_13_katie_gibboney",
+  "lv1452_12_jennamay",
+  "lv1452_24_ted_doolittle",
+  "lv1452_01_alan_davis_drake_1945_20",
+  "lv1452_20_robert_scott",
+  "lv1452_10_janice_green",
+  "lv1452_15_karen_savage",
+  "lv1452_19_michael_thomas_robinson",
+  "lv1452_06_denny_sayers_d_2015",
+  "lv1452_17_mary_mac",
+  "lv1452_08_jemmablythe",
+  "lv1452_22_sean_mckinley",
+  "lv1452_05_d_e_wittkower",
+  "lv1452_04_clarica",
+  "lv1452_02_blrossow",
+  "lv1452_14_kristin_hughes_1974_2021",
+  "lv1452_21_sibella_denton",
+  "lv1452_07_david_best",
+  "lv1452_18_mark_f_smith",
+  "lv1452_16_lee_ann_howlett",
+  "lv1452_09_josh_price",
+  "lv1452_03_cody_logan",
+  "lv1452_23_shurtagal"
+ ],
+ "method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking"
+}

@@ -1,0 +1,36 @@
+{
+ "good": [
+  "lv13668_07_graham_scott",
+  "lv13668_02_christine_rojas",
+  "lv13668_11_larry_wilson",
+  "lv13668_01_bruce_kachuk",
+  "lv13668_12_maria_kasper",
+  "lv13668_08_hypatia"
+ ],
+ "ranking": [
+  "lv13668_07_graham_scott",
+  "lv13668_02_christine_rojas",
+  "lv13668_11_larry_wilson",
+  "lv13668_01_bruce_kachuk",
+  "lv13668_12_maria_kasper",
+  "lv13668_08_hypatia",
+  "lv13668_18_scott_mcmullan",
+  "lv13668_19_sarah_brown",
+  "lv13668_20_tomas_peter",
+  "lv13668_05_emily_isabella",
+  "lv13668_14_michele_fry",
+  "lv13668_04_eva_davis_d_2025",
+  "lv13668_13_melissa_jane",
+  "lv13668_09_jim_gallagher",
+  "lv13668_10_josh_kibbey",
+  "lv13668_21_tovarisch",
+  "lv13668_17_sweethome",
+  "lv13668_16_phil_schempf",
+  "lv13668_06_eileen_rose_kelly",
+  "lv13668_03_david_lawrence",
+  "lv13668_22_william_allan_jones",
+  "lv13668_15_nemo",
+  "lv13668_23_winston_tharp"
+ ],
+ "method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking"
+}

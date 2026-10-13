@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+data/raw/
+data/refs/
+data/ladders/
+data/listening/
+data/rankings/
+logs/
+*.log
+Product spec v2.pdf
+.gradio/

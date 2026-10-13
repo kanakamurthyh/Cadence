@@ -1,0 +1,14 @@
+{
+ "source": "lv8387_03_david_lawrence",
+ "labels": [
+  {
+   "type": "monotone",
+   "severity": 4,
+   "w0": 40,
+   "w1": 47,
+   "param": 0.2,
+   "start": 19.205,
+   "end": 22.495
+  }
+ ]
+}

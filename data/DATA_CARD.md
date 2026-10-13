@@ -1,0 +1,59 @@
+# Cadence dataset v1: data card
+
+## Contents
+
+| Folder | What | Count |
+|---|---|---|
+| `refs/<T>/<id>.wav` | Each LibriVox reading cropped to the text: 16 kHz mono, −23 LUFS | 24 (T1), 23 (T2), 19 (T3) |
+| `refs/<T>/<id>.json` | Word alignment, snapped word edges, per-word features, reader metadata, aligner confidence | same |
+| `refs/<T>/selection.json` | Reader ranking and the good set (top 6), plus how the ranking was made | 3 |
+| `ladders/<T>/<clip>.wav` | Synthetic clips: 6 flaw types × 2 spans × 5 severities, null-edit copies of every good rendition, compound clips | ~200 |
+| `ladders/<T>/<clip>.json` | Measured alignment and features of the clip; `meta.labels` holds exact word-span labels | same |
+| `ladders/<T>/manifest.json` | Every clip with its source rendition, flaws (type, severity, word span) and labels in clip time | 3 |
+| `listening/responses.csv` | Listening-test ratings, 0–4: `listener,clip,type,level,rating,source,time` (created by `cadence human`) | pending |
+| `rankings/<T>_ratings.csv`, `rankings/<T>.csv` | Raw 1–10 scores per rater; derived ranks, one column per rater (created by `cadence human`) | pending |
+| `takes/<T>/<speaker>_<T>_take<n>.*` | Teammate readings with natural flaws (test only) | pending |
+| `annotations/<annotator>/<take_id>.txt` | Audacity label files: `start<TAB>end<TAB>flaw_type`, two independent annotators | pending |
+| `params.json` | Everything fitted on T1 and frozen: m_f, s_f, τ, λ_d, severity map | 1 |
+
+## Texts and licences
+
+- **T1:** *Sea Fever*, John Masefield (1902).
+- **T2:** *Stopping by Woods on a Snowy Evening*, Robert Frost (1923).
+- **T3:** Gettysburg Address, closing paragraph, Abraham Lincoln (1863).
+
+All texts are public domain in the US. All recordings are LibriVox recordings, released into
+the public domain ([LibriVox licence](https://librivox.org/pages/public-domain/)). Reader names
+are LibriVox display names, as published. Derived clips (crops, ladders) are released into
+the public domain on the same terms.
+
+## Flaw injection (fixed seed 20261013 + text number)
+
+Each flaw is injected into the top-ranked good rendition. Every clip, including the clean
+null-edit copies, is resynthesized through the same Praat PSOLA pass, so clean and flawed
+audio share processing artifacts.
+
+| Type | Edit | Severity 1 → 5 |
+|---|---|---|
+| Pace (rushed / dragging) | PSOLA duration change over 4–7 words, pitch kept | ×0.9 → ×0.55 / ×1.1 → ×1.8 |
+| Missing pause | Phrase-boundary silence (≥ 0.3 s) shortened | 20% → 100% removed |
+| Misplaced pause | Room-tone silence inserted between two mid-phrase words | 0.3 → 2.0 s |
+| Monotone | Pitch compressed toward the span median (semitone scale) | 80% → 10% of range kept |
+| Missed emphasis | Pitch above the neighbours' median, and the loudness excess, flattened on one consensus stress point | 80% → 0% of the peak kept |
+| Volume fade | Gain ramp down over the first quarter of the span, held to the end | −3 → −18 dB |
+
+**Label spans:**
+- Pace, monotone, fade and emphasis: the edited words.
+- Missing pause: the two words around the boundary.
+- Misplaced pause: the inserted silence itself.
+
+**Leakage rule:** the edited rendition is excluded from the envelope when its own ladder is scored.
+
+## Known limitations
+
+- The good set is provisionally ranked by aligner confidence until the 3-rater human ranking
+  exists (see `selection.json` → `method`).
+- Severities are injected levels, not perceived levels, until the listening test is run.
+- LibriVox readers are amateurs; T3 has no recording of the original orator, and none exists.
+- Readings follow slightly different editions of each text. Words a reader changed are
+  force-aligned to the canonical text, which adds noise to those words.
