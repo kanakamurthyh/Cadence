@@ -107,9 +107,20 @@ def with_phrases(feats: dict, pid: np.ndarray) -> dict:
             if len(v) >= 2:
                 spread[m] = np.percentile(v, 90) - np.percentile(v, 10)
     with np.errstate(all="ignore"):
-        out["rate_phr"] = rate / np.nanmedian(rate) if np.isfinite(rate).any() else rate
-        out["pitch_spread_phr"] = ((spread + 1) / (np.nanmedian(spread) + 1)
-                                   if np.isfinite(spread).any() else spread)
+        # Normalize by median over PHRASES (one value per phrase), not over words.
+        # Each phrase broadcasts a constant rate/spread to its words; take the first
+        # element per phrase so the longer phrase can't dominate the median.
+        unique_pids = np.unique(pid)
+        phr_rates = np.array([rate[pid == p][0] for p in unique_pids])
+        phr_spreads = np.array([spread[pid == p][0] for p in unique_pids])
+        if np.isfinite(phr_rates).any():
+            out["rate_phr"] = rate / np.nanmedian(phr_rates)
+        else:
+            out["rate_phr"] = rate
+        if np.isfinite(phr_spreads).any():
+            out["pitch_spread_phr"] = (spread + 1) / (np.nanmedian(phr_spreads) + 1)
+        else:
+            out["pitch_spread_phr"] = spread
     return out
 
 

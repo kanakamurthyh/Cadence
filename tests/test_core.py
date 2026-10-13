@@ -180,20 +180,16 @@ def test_phrase_feats_nan_safe():
     assert np.isnan(out["pitch_spread_phr"][:3]).all() and np.isfinite(out["rate_phr"]).all()
 
 
-def _phrase_ref(tempo, pause_after_w4, seed, W=10):
-    """Minimal ref dict with syl/dur/pitch and a configurable pause boundary.
-
-    Pause is placed after word 4 (index 4), creating a 5+5 equal split so that
-    nanmedian of the per-word broadcast phrase-rate array equals the midpoint of
-    the two phrase rates (not biased by phrase length).
-    """
+def _phrase_ref(seed, W=20, pause_idxs=(3, 7), pause_val=0.3):
+    """Minimal ref dict with syl/dur/pitch and configurable pause boundaries."""
     r = np.random.default_rng(seed)
     syl = np.ones(W)
     dur = np.full(W, 0.25)
     pause = np.zeros(W)
-    pause[4] = pause_after_w4
+    for idx in pause_idxs:
+        pause[idx] = pause_val
     pitch = r.normal(0, 1, W)
-    rate = syl / dur * tempo
+    rate = syl / dur
     pitch_range = np.full(W, 6.0) + r.normal(0, 0.1, W)
     loud = r.normal(0, 0.3, W)
     prom_pitch = r.normal(-1, 0.2, W)
@@ -204,22 +200,29 @@ def _phrase_ref(tempo, pause_after_w4, seed, W=10):
 
 
 def test_deviations_phrase_gating():
-    """phrase=False: phrase channels all zero; phrase=True: rel channels zero, sped-up phrase flagged."""
-    W = 10
-    # 4 refs all pause 0.3 s after word 4 → consensus phrase boundary → equal 5+5 split
-    refs = [_phrase_ref(1.0, 0.3, s, W) for s in range(4)]
+    """phrase=False: phrase channels all zero; phrase=True: rel channels zero, longest phrase flagged.
+
+    Uses 3 phrases of 4+4+12 words so the LONGEST phrase (12 words, words 8-19) is sped up.
+    The phrase-median normalisation must be over phrases (not words) for rate_phr on phrase 2
+    to exceed 1.0; word-weighted median would be dominated by phrase 2 and yield rate_phr = 1.0.
+    """
+    W = 20  # phrases: words 0-3 (4), 4-7 (4), 8-19 (12)
+    refs = [_phrase_ref(s, W) for s in range(4)]
     env = E.build(refs)
 
-    # (a) build stores phrase_id
+    # (a) build stores phrase_id with 3 phrases (boundaries after words 3 and 7)
     assert env.phrase_id is not None and len(env.phrase_id) == W
+    assert list(env.phrase_id[:4]) == [0, 0, 0, 0]
+    assert list(env.phrase_id[4:8]) == [1, 1, 1, 1]
+    assert all(env.phrase_id[8:] == 2)
 
-    # attempt: phrase 1 (words 5-9) compressed to dur=0.1 s/word (refs use 0.25 s) →
-    # phrase 1 rate = 10 syl/s vs phrase 0 rate = 4.0 syl/s.
-    # Equal 5+5 split → nanmedian of broadcast = (4+10)/2 = 7.0 → rate_phr[5:] ≈ 1.43 > 1.0
-    att = _phrase_ref(1.0, 0.3, 99, W)
-    att["syl"] = np.ones(W)
+    # attempt: phrase 2 (12 words, 8-19) compressed to dur=0.1 s/word.
+    # phrase rates: phrase0=4.0, phrase1=4.0, phrase2=10.0
+    # phrase median = 4.0 (mid of [4,4,10]) → rate_phr phrase2 = 2.5 > 1.0 ✓
+    # (word-weighted median of [4]*8+[10]*12 would be 10.0 → rate_phr=1.0 — the old bug)
+    att = _phrase_ref(99, W)
     att["dur"] = np.full(W, 0.25)
-    att["dur"][5:] = 0.1  # shorten phrase 1 duration → higher phrase rate
+    att["dur"][8:] = 0.1
 
     p = params()
 
@@ -228,11 +231,29 @@ def test_deviations_phrase_gating():
     for key in [("rate_phr", +1), ("rate_phr", -1), ("pitch_spread_phr", -1)]:
         assert np.all(dev_off[key] == 0), f"phrase=False: expected zeros for {key}"
 
-    # (c) phrase=True: rel channels zeroed; rate_phr+ is >0 on the sped-up phrase
+    # (c) phrase=True: rel channels zeroed; rate_phr+ > 0 on the 12-word sped-up phrase
     dev_on = E.deviations(att, env, p.margin, p.scale, relative=True, phrase=True)
     for key in [("rate_rel", +1), ("rate_rel", -1), ("pitch_range_rel", -1)]:
         assert np.all(dev_on[key] == 0), f"phrase=True: expected zeros for rel channel {key}"
-    assert dev_on[("rate_phr", +1)][5:].max() > 0, "phrase=True: sped-up phrase should flag rate_phr+"
+    assert dev_on[("rate_phr", +1)][8:].max() > 0, "phrase=True: longest phrase sped up should flag rate_phr+"
+
+
+def test_with_phrases_normalizes_by_phrase_median():
+    """Normalization uses median over phrases (one value each), not over words.
+
+    Two phrases of lengths 2 and 8 with rates 2.0 and 4.0 syl/s.
+    Phrase-median = median([2.0, 4.0]) = 3.0 → rate_phr = 2/3 and 4/3.
+    Word-weighted median would be 4.0 → rate_phr = 0.5 and 1.0 (the old bug).
+    """
+    pid = np.array([0, 0, 1, 1, 1, 1, 1, 1, 1, 1])  # phrase 0: 2 words, phrase 1: 8 words
+    syl = np.ones(10)
+    dur = np.concatenate([np.full(2, 0.5), np.full(8, 0.25)])  # rate0=2.0, rate1=4.0
+    pitch = np.zeros(10)  # all-zero: spread = 0.0 (non-NaN, ≥2 voices per phrase)
+    f = {"syl": syl, "dur": dur, "pitch": pitch,
+         "rate": np.full(10, 4.0), "pitch_range": np.full(10, 6.0)}
+    out = E.with_phrases(f, pid)
+    assert np.allclose(out["rate_phr"][:2], 2.0 / 3.0), "phrase 0: rate_phr should be 2/3"
+    assert np.allclose(out["rate_phr"][2:], 4.0 / 3.0), "phrase 1: rate_phr should be 4/3"
 
 
 def test_margin_diffs_no_keyerror():
