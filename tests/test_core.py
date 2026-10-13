@@ -144,6 +144,20 @@ def test_emphasis_targets_perceptible_only():
     assert spans["missed_emphasis"] == [(6, 6)]
 
 
+def test_emphasis_rule_suppresses_fallback():
+    from cadence import inject
+    W = 20
+    words = [{"word": f"w{i}", "start": i * 0.4, "end": i * 0.4 + 0.35} for i in range(W)]
+    f = {"pause": np.zeros(W), "prom_pitch": np.full(W, 0.5), "prom_loud": np.full(W, 0.5)}
+    stress = np.zeros(W, bool)
+    stress[6] = True
+    stress[10] = True
+    s1 = inject.choose_spans(words, f, stress, np.random.default_rng(0), stress_rule=1)
+    s2 = inject.choose_spans(words, f, stress, np.random.default_rng(0), stress_rule=2)
+    assert len(s1["missed_emphasis"]) > 0
+    assert s2["missed_emphasis"] == []
+
+
 def test_phrase_ids_consensus():
     p = np.zeros((4, 8)); p[:, 2] = 0.3; p[:3, 5] = 0.3  # all pause after w2, 3 of 4 after w5
     assert list(E.phrase_ids(p)) == [0, 0, 0, 1, 1, 1, 2, 2]
