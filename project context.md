@@ -30,7 +30,7 @@ Cadence is the Track C (Contrastive Speech Analytics) hackathon entry built from
 | Baseline frozen for before/after comparison | `results/baseline_2026-10-13/` |
 | Technical report, data card, README | Done (`docs/`, `data/DATA_CARD.md`) |
 | Reproducibility (byte-identical reruns, CI workflow, Dockerfile, uv.lock) | Done; rerun check passes |
-| GitHub repo | Public repository initialized; source-only initial commit pending |
+| GitHub repo | Public source-only snapshot pushed to `main`; branch tracks `origin/main` |
 | YouTube video, Devpost page | **Not done** (needs the team) |
 | Stretch: Azure baseline, WavLM rhythm, re-record pilot, LLM rephrasing | Not built |
 
@@ -62,7 +62,8 @@ tie at T3's strictest point (0.15 FA/min).
 - Compound clips are weak: B2 scores 12% on T2, against 38% for B0.
 
 Full tables: `results/results.md`. Raw numbers: `results/results.json`. These compact reports
-are included in the source snapshot; generated recordings and human-study assets are excluded.
+are included in the published source snapshot; generated recordings and human-study assets are
+excluded.
 
 ## 4. Key decisions and why
 
@@ -191,6 +192,6 @@ memory pressure.
   - The fixture test of every path passed.
   - Launched `cadence human` on :7861 (HTTP 200; 24/23/19 excerpts generated).
 - **2026-10-13 (session 5): public source publication.** Initialized the empty public GitHub
-  repository and prepared a source-only snapshot. Added ignores for generated recordings,
-  human-study assets, run logs, caches, and the unlicensed project-spec PDF; retained source,
-  docs, compact results, and demo fixtures. Initial commit and push are pending.
+  repository and pushed a source-only snapshot to `main` (`c44c5b0`). Added ignores for generated
+  recordings, human-study assets, run logs, caches, and the unlicensed project-spec PDF; retained
+  source, docs, compact results, and demo fixtures.
