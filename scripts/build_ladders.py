@@ -29,27 +29,40 @@ SINGLE_TYPES = ["pace_rushed", "pace_dragging", "missing_pause", "misplaced_paus
                 "monotone", "missed_emphasis", "volume_fade"]
 
 
-def plan(tid: str) -> list[dict]:
-    """The full list of clips for one text (deterministic)."""
+def plan(tid: str, dataset: int = 3) -> list[dict]:
+    """The full list of clips for one text (deterministic).
+
+    dataset=3 (default): emphasis targets perceptible consensus stress points
+    (stress_rule=2, perceptible mask).  dataset=2: legacy behaviour (any
+    positive prominence, stress_rule=1) — reproduces byte-for-byte.
+    """
     good = good_set(tid)
     top = good[0]
     ref = load_record(REFS / tid / top)
     others = load_refs(tid, exclude=(top,))
     env = build([r["feats"] for r in others])
     rng = np.random.default_rng(SEED + int(tid[1:]))
-    spans = inject.choose_spans(ref["words"], ref["feats"], env.stress_pitch | env.stress_loud, rng,
+    if dataset >= 3:
+        stress_mask = env.stress_pitch_p | env.stress_loud_p
+        stress_rule = 2
+    else:
+        stress_mask = env.stress_pitch | env.stress_loud
+        stress_rule = 1
+    spans = inject.choose_spans(ref["words"], ref["feats"], stress_mask, rng,
                                 others_pause=np.stack([r["feats"]["pause"] for r in others]),
-                                rule=TEXTS[tid].get("span_rule", 1))
+                                rule=TEXTS[tid].get("span_rule", 1),
+                                stress_rule=stress_rule)
     clips = []
     for g in good:
-        clips.append({"id": f"{tid}_null_{g}", "source": g, "flaws": [], "kind": "null"})
+        clips.append({"id": f"{tid}_null_{g}", "source": g, "flaws": [], "kind": "null",
+                      "dataset_version": dataset})
     for typ in SINGLE_TYPES:
         for si, (w0, w1) in enumerate(spans[typ]):
             for lvl in range(1, 6):
                 name = typ.replace("pace_", "pace-")
                 sidx = si if not typ.startswith("pace") else (0 if typ.endswith("rushed") else 1)
                 clips.append({"id": f"{tid}_{name}_s{sidx}_L{lvl}", "source": top, "kind": "ladder",
-                              "flaws": [[typ, lvl, w0, w1]]})
+                              "flaws": [[typ, lvl, w0, w1]], "dataset_version": dataset})
     # compound: two different flaw types on non-overlapping spans, severity 4
     pool = [(t, s) for t in SINGLE_TYPES for s in spans[t]]
     made = 0
@@ -61,7 +74,7 @@ def plan(tid: str) -> list[dict]:
         if t1.split("_")[0] == t2.split("_")[0] or not (s1[1] + 2 < s2[0] or s2[1] + 2 < s1[0]):
             continue
         clips.append({"id": f"{tid}_compound_{made}", "source": top, "kind": "compound",
-                      "flaws": [[t1, 4, *s1], [t2, 4, *s2]]})
+                      "flaws": [[t1, 4, *s1], [t2, 4, *s2]], "dataset_version": dataset})
         made += 1
     return clips
 
@@ -105,6 +118,9 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--texts", nargs="*", default=list(TEXTS))
     ap.add_argument("--workers", type=int, default=5)
+    ap.add_argument("--dataset", type=int, choices=[2, 3], default=3,
+                    help="Dataset version: 3 (default) targets perceptible consensus stress points; "
+                         "2 reproduces the legacy behaviour byte-for-byte.")
     a = ap.parse_args()
     jobs = []
     from cadence.data.texts import MIN_GOOD
@@ -114,7 +130,7 @@ if __name__ == "__main__":
             a.texts.remove(tid)
             continue
         (LADDERS / tid).mkdir(parents=True, exist_ok=True)
-        clips = plan(tid)
+        clips = plan(tid, dataset=a.dataset)
         jobs += [(tid, c) for c in clips]
         print(tid, len(clips), "clips planned", flush=True)
     labels = {}

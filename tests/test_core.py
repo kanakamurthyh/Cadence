@@ -128,3 +128,14 @@ def test_stress_floor_ignores_imperceptible_peaks():
         r["prom_loud"][7] = 0.2  # every reader "peaks" by 0.2 dB: nobody hears that
     env = E.build(refs)
     assert env.stress(False)[1][7] and not env.stress(True)[1][7]
+
+
+def test_emphasis_targets_perceptible_only():
+    from cadence import inject
+    W = 20
+    words = [{"word": f"w{i}", "start": i * 0.4, "end": i * 0.4 + 0.35} for i in range(W)]
+    f = {"pause": np.zeros(W), "prom_pitch": np.full(W, 2.0), "prom_loud": np.full(W, 2.0)}
+    stress = np.zeros(W, bool)
+    stress[6] = True  # one perceptible consensus point only
+    spans = inject.choose_spans(words, f, stress, np.random.default_rng(0), stress_rule=2)
+    assert spans["missed_emphasis"] == [(6, 6)]

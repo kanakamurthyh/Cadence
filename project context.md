@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: scoring-push plan; dataset rebuild running)
+> Last updated: 2026-10-14 (session 10: Task 1 dataset v3 emphasis rule implemented)
 
 ## 1. What this project is
 
@@ -438,3 +438,11 @@ memory pressure.
   - This checkout had no audio; regenerating fetch → refs → ladders (nohup, 3 workers,
     `logs/regen_2026-10-14.log`). Indian-speaker data sources under deep research
     (`research_notes/`, `reports/`). Hugging Face login done for dataset publishing.
+- **2026-10-14 (session 10, Task 1): dataset v3 emphasis rule.**
+  - Added `stress_rule: int = 1` param to `inject.choose_spans`; with `stress_rule=2` the
+    fallback that admits any (imperceptible) consensus stress point is disabled.
+  - `build_ladders.py`: `--dataset {2,3}` flag (default 3). Dataset 3 passes the perceptible
+    mask (`env.stress_pitch_p | env.stress_loud_p`) and `stress_rule=2`; dataset 2 reproduces
+    the legacy behaviour byte-for-byte. `"dataset_version"` key added to every clip dict.
+  - `data/DATA_CARD.md`: Version history section added.
+  - New test: `test_emphasis_targets_perceptible_only` in `tests/test_core.py`.

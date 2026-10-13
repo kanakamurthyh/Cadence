@@ -78,6 +78,13 @@ audio share processing artifacts.
 
 **Leakage rule:** the edited rendition is excluded from the envelope when its own ladder is scored.
 
+## Version history
+
+| Version | Emphasis targets | `--dataset` flag |
+|---|---|---|
+| v2 | Any consensus prominence: ≥ 75 % of good readers have any positive `prom_pitch` or `prom_loud` | `--dataset 2` |
+| v3 | Perceptible consensus stress only: ≥ 75 % of good readers peak by ≥ 1.5 st (pitch) or ≥ 1 dB (loudness) | `--dataset 3` (default) |
+
 ## Known limitations
 
 - The good set is provisionally ranked by aligner confidence until the 3-rater human ranking

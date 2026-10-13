@@ -206,7 +206,7 @@ def null_edit(x: np.ndarray, words: list[dict]) -> np.ndarray:
 
 # -- span selection --------------------------------------------------------
 
-def choose_spans(words, feats, stress, rng, n=2, others_pause=None, rule: int = 1) -> dict[str, list[tuple[int, int]]]:
+def choose_spans(words, feats, stress, rng, n=2, others_pause=None, rule: int = 1, stress_rule: int = 1) -> dict[str, list[tuple[int, int]]]:
     """Random word spans per flaw type from a fixed-seed generator.
 
     rule 1 (T1-T3, frozen): as first released. rule 2 (newer texts): a misplaced pause
@@ -247,7 +247,7 @@ def choose_spans(words, feats, stress, rng, n=2, others_pause=None, rule: int = 
     ph = phrase_spans()
     own = (np.nan_to_num(feats["prom_pitch"]) > 1.0) | (np.nan_to_num(feats["prom_loud"]) > 1.5)
     stress_c = [(i, i) for i in inner if stress[i] and own[i]]
-    if len(pick(list(stress_c), n)) < n:  # too few strong peaks: allow any consensus stress point
+    if stress_rule < 2 and len(pick(list(stress_c), n)) < n:  # v1/v2: allow any consensus stress point
         stress_c += [(i, i) for i in inner if stress[i] and not own[i]]
     return {
         "pace_rushed": pick(ph, 1),
