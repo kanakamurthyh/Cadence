@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: Task 2 Fix Round 2 — phrase-median normalization corrected)
+> Last updated: 2026-10-14 (session 10: Task 3 — detector v3 phrase channels, trimmed regions, explanations)
 
 ## 1. What this project is
 
@@ -99,6 +99,7 @@ provisionally by aligner confidence until the 3-rater human ranking is done.
 |---|---|---|
 | v1 | Absolute channels; any positive prominence counts as stress | Frozen in `results/frozen_v1_2026-10-14/`; reproducible with params flags off |
 | **v2 (shipped)** | Adds self-relative pace/monotone channels and perceptible stress points (≥ 1.5 st / 1 dB); rubric λ pooled across dimensions | `data/params.json` (B2) and `data/params_B1.json` (B1 fallback) |
+| v3 (code done, not yet calibrated) | Phrase-level pace (`rate_phr`) and monotone (`pitch_spread_phr`) channels replace the word-level self-relative ones; phrase regions trimmed to the words that deviate themselves | `Params.phrase_channels` / `Config(phrase=True)`; ships only if the Task 5 rule passes |
 
 v2 helped the development texts (T4 23 → 35% at 0.24 FA/min) but **not** the untouched T6: there
 B2 v2 scores 23% at 2.15 FA/min, against B1 27% and the v1 design 27% at 1.43. Missed emphasis
@@ -285,6 +286,7 @@ memory pressure.
 - [ ] Step 5: `cadence evaluate`, robustness, make_demo, `rerun_check --store`, `cadence compare`.
 - [ ] Phone-microphone robustness take.
 - [ ] Improve pace and monotone detection: region-level rate, a stricter good set, WavLM rhythm.
+  (Detector v3 phrase channels implemented; needs the T1 calibration run `Config(phrase=True)` and the ship rule.)
 - [ ] The demo clip's rushed pace is not detected; adjust the 0:50 demo segment or fix pace.
 - [ ] Publish the dataset link separately; generated recordings and human-study assets are not in Git.
 - [ ] W0–W6 of the scoring-push spec (rebuild, dataset v3, Indian texts, detector v3, gradient figures, HF publish, demo).
@@ -471,3 +473,16 @@ memory pressure.
     → phrase-median = 3.0 → rate_phr = 2/3 and 4/3 (not 0.5/1.0 as word-median would give).
     `_phrase_ref` helper signature simplified (removed `tempo`/`pause_after_w4`, supports
     `pause_idxs` tuple for multi-boundary refs). 25 tests pass, 0 RuntimeWarnings.
+- **2026-10-14 (session 10, Task 3): detector v3 — phrase channels, trimmed regions, explanations.**
+  - `detect.py`: `Params.phrase_channels: bool = False`; `detect` passes `phrase=` to
+    `deviations`; a region whose dominant channel is a phrase feature is trimmed to the words
+    whose word-level self-relative deviation (same side: `rate_rel` for `rate_phr`,
+    `pitch_range_rel` for `pitch_spread_phr`) is positive, else the whole phrase is kept;
+    start/end/d_mean/d_max/severity use the kept words. With the flag off, output is unchanged.
+  - `explain`: adds phrase features to x when the envelope has phrases; new texts "phrase
+    speaking rate relative to your own pace" and "phrase pitch movement relative to your own".
+  - `evaluate.py`: `Config.phrase: bool = False`, name suffix ", phrase channels", `calibrate`
+    passes `phrase_channels=cfg.phrase`. No CLI flag (evaluate exposes no variant flags).
+  - Tests: four new (rushed phrase flagged and trimmed, phrase explanation, flag off never
+    yields phrase regions, flattened phrase flagged as monotone). 29 tests pass, 0 warnings.
+  - No calibration / evaluation run yet (long job; needs audio data).

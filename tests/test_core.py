@@ -274,3 +274,74 @@ def test_margin_diffs_no_keyerror():
     full["dur"] = np.full(W, 0.3)
     diffs_with_syl = _margin_diffs(full, full, pid)
     assert "rate_phr" in diffs_with_syl
+
+
+def _phr_reader(tempo, seed, W=30):
+    f = _reader(tempo, seed)
+    f["syl"], f["dur"] = np.ones(W), np.full(W, 1 / tempo)
+    f["pause"] = np.zeros(W); f["pause"][[9, 19]] = 0.4
+    return f
+
+
+def test_v3_phrase_pace_flags_rushed_phrase_trimmed():
+    refs = [_phr_reader(t, s) for s, t in enumerate([3.0, 3.6, 4.2, 4.8, 5.4])]
+    att = _phr_reader(3.0, 99)
+    att["dur"][12:17] /= 1.8; att["rate"][12:17] *= 1.8
+    words = [{"word": f"w{i}", "start": i * 0.4, "end": i * 0.4 + 0.35} for i in range(30)]
+    env = E.build(refs)
+    p = Params(margin={f: 0.0 for f in E.ENV_FEATURES}, scale={f: 0.3 for f in E.ENV_FEATURES},
+               tau={t: 1.0 for t in E.FLAW_TYPES}, relative_channels=True, stress_floor=True,
+               phrase_channels=True)
+    hit = [r for r in detect(att, words, env, p) if r["type"] == "pace"]
+    assert hit and 10 <= hit[0]["w0"] <= 13 and 15 <= hit[0]["w1"] <= 19
+
+
+def test_explain_phrase_region():
+    from cadence.detect import explain
+    refs = [_phr_reader(t, s) for s, t in enumerate([3.0, 3.6, 4.2, 4.8])]
+    env = E.build(refs)
+    att = E.with_phrases(_phr_reader(3.0, 7), env.phrase_id)
+    words = [{"word": f"w{i}", "start": i * 0.4, "end": i * 0.4 + 0.35} for i in range(30)]
+    r = {"type": "pace", "feature": "rate_phr", "side": 1, "w0": 12, "w1": 16, "start": 4.8, "end": 6.75}
+    assert "x your own typical value" in explain(r, att, words, env)
+
+
+def test_v3_phrase_channels_off_never_yields_phrase_regions():
+    """Default Params (phrase_channels=False): v1/v2 output never names a phrase feature."""
+    refs = [_phr_reader(t, s) for s, t in enumerate([3.0, 3.6, 4.2, 4.8, 5.4])]
+    att = _phr_reader(3.0, 99)
+    att["dur"][10:20] /= 1.8; att["rate"][10:20] *= 1.8
+    att["pitch"][10:20] = 0.0
+    words = [{"word": f"w{i}", "start": i * 0.4, "end": i * 0.4 + 0.35} for i in range(30)]
+    env = E.build(refs)
+    base = dict(margin={f: 0.0 for f in E.ENV_FEATURES}, scale={f: 0.3 for f in E.ENV_FEATURES},
+                tau={t: 1.0 for t in E.FLAW_TYPES})
+    for extra in ({}, {"relative_channels": True, "stress_floor": True}):
+        assert Params(**base, **extra).phrase_channels is False
+        for r in detect(att, words, env, Params(**base, **extra)):
+            assert r["feature"] not in E.PHRASE_FEATURES
+
+
+def test_v3_pitch_spread_phrase_flags_flattened_phrase_as_monotone():
+    """Refs move pitch in every phrase; the attempt flattens phrase 2 (words 10-19)."""
+    from cadence.detect import explain
+
+    def reader(tempo, seed):
+        f = _phr_reader(tempo, seed)
+        f["pitch"] = np.random.default_rng(100 + seed).normal(0, 2.0, 30)
+        return f
+
+    refs = [reader(t, s) for s, t in enumerate([3.0, 3.6, 4.2, 4.8, 5.4])]
+    att = reader(3.0, 99)
+    att["pitch"][10:20] = 0.05 * np.random.default_rng(5).normal(0, 1, 10)  # nearly constant
+    words = [{"word": f"w{i}", "start": i * 0.4, "end": i * 0.4 + 0.35} for i in range(30)]
+    env = E.build(refs)
+    margin, scale = {f: 0.0 for f in E.ENV_FEATURES}, {f: 0.3 for f in E.ENV_FEATURES}
+    dev = E.deviations(att, env, margin, scale, relative=True, stress_floor=True, phrase=True)
+    assert dev[("pitch_spread_phr", -1)][10:20].min() > 0
+    p = Params(margin=margin, scale=scale, tau={t: 1.0 for t in E.FLAW_TYPES},
+               relative_channels=True, stress_floor=True, phrase_channels=True)
+    hit = [r for r in detect(att, words, env, p) if r["feature"] == "pitch_spread_phr"]
+    assert hit and hit[0]["type"] == "monotone"
+    assert hit[0]["w0"] >= 10 and hit[0]["w1"] <= 19
+    assert "phrase pitch movement relative to your own" in explain(hit[0], att, words, env)

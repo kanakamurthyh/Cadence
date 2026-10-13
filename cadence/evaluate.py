@@ -37,6 +37,7 @@ class Config:
     margin: bool = True
     relative: bool = True       # v2 self-relative pace/monotone channels
     stress_floor: bool = True   # v2 perceptible stress points
+    phrase: bool = False        # v3 phrase-level pace/monotone channels
 
     @property
     def name(self) -> str:
@@ -54,6 +55,8 @@ class Config:
             s += ", no relative channels"
         elif not self.stress_floor:
             s += ", no stress floor"
+        if self.phrase:
+            s += ", phrase channels"
         return s
 
 
@@ -224,7 +227,8 @@ def objective(r: dict) -> float:
 def calibrate(cfg: Config, tid: str = "T1", full: bool = True) -> Params:
     margin, scale = fit_margin_scale(cfg, tid)
     p = Params(margin=margin, scale=scale, fitted_on=f"{tid} ({cfg.name})",
-               relative_channels=cfg.relative, stress_floor=cfg.stress_floor)
+               relative_channels=cfg.relative, stress_floor=cfg.stress_floor,
+               phrase_channels=cfg.phrase)
     if cfg.method == "B0":
         return p
     # one threshold per flaw type, by coordinate ascent: maximize T1 Matching Score

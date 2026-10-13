@@ -7,7 +7,8 @@ from pathlib import Path
 
 import numpy as np
 
-from .envelope import CHANNELS, ENV_FEATURES, FLAW_TYPES, Envelope, by_type, deviations
+from .envelope import (CHANNELS, ENV_FEATURES, FLAW_TYPES, PHRASE_FEATURES, Envelope,
+                       add_derived, by_type, deviations, with_phrases)
 from .features import UNITS
 
 DIMENSION = {  # flaw type -> rubric dimension
@@ -29,6 +30,7 @@ class Params:
     tau: dict = field(default_factory=dict)  # per flaw type tau_high (tau_low = tau/2); falls back to tau_high
     relative_channels: bool = False  # v2: self-relative pace/monotone channels (False = v1)
     stress_floor: bool = False       # v2: perceptible stress points only (False = v1)
+    phrase_channels: bool = False    # v3: phrase-level pace/monotone channels (False = v1/v2)
     lam: dict = field(default_factory=lambda: {d: 20.0 for d in DIMENSIONS})
     sev_x: list = field(default_factory=lambda: [0.0, 1.0, 2.0, 4.0, 8.0])
     sev_y: list = field(default_factory=lambda: [1.0, 2.0, 3.0, 4.0, 5.0])
@@ -73,8 +75,17 @@ def hysteresis(d: np.ndarray, hi: float, lo: float, merge_gap: int = 1) -> list[
     return merged
 
 
+# v3: a phrase-channel region is trimmed to the words whose own word-level self-relative
+# deviation (same direction) is positive, so the flag points at the rushed / flat words.
+PHRASE_TRIM = {("rate_phr", 1): ("rate_rel", 1), ("rate_phr", -1): ("rate_rel", -1),
+               ("pitch_spread_phr", -1): ("pitch_range_rel", -1)}
+
+
 def detect(x: dict, words: list[dict], env: Envelope, p: Params, types=None) -> list[dict]:
-    dev = deviations(x, env, p.margin, p.scale, relative=p.relative_channels, stress_floor=p.stress_floor)
+    dev = deviations(x, env, p.margin, p.scale, relative=p.relative_channels, stress_floor=p.stress_floor,
+                     phrase=p.phrase_channels)
+    word_dev = (deviations(x, env, p.margin, p.scale, relative=True, stress_floor=p.stress_floor, phrase=False)
+                if p.phrase_channels else None)
     typed = by_type(dev)
     regions = []
     for typ in types or FLAW_TYPES:
@@ -85,8 +96,11 @@ def detect(x: dict, words: list[dict], env: Envelope, p: Params, types=None) -> 
             if d[a:b + 1].max() <= th:
                 continue
             idx = [i for i in range(a, b + 1) if d[i] > 0] or list(range(a, b + 1))
-            spans = [channel_span(ch[i], i, words) for i in idx]
             dom = int(np.bincount(ch[idx], weights=d[idx] + 1e-9).argmax())
+            if word_dev is not None and CHANNELS[dom][0] in PHRASE_FEATURES:
+                wd = word_dev[PHRASE_TRIM[CHANNELS[dom][:2]]]
+                idx = [i for i in idx if wd[i] > 0] or idx
+            spans = [channel_span(ch[i], i, words) for i in idx]
             regions.append({
                 "type": typ, "w0": idx[0], "w1": idx[-1],
                 "start": min(s for s, _ in spans), "end": max(e for _, e in spans),
@@ -111,6 +125,8 @@ def _fmt(v: float, f: str) -> str:
 
 def explain(r: dict, x: dict, words: list[dict], env: Envelope) -> str:
     f, side = r["feature"], r["side"]
+    if env.phrase_id is not None:
+        x = with_phrases(add_derived(x), env.phrase_id)
     idx = list(range(r["w0"], r["w1"] + 1))
     att = float(np.nanmean(x[f][idx]))
     refs = np.nanmean(env.ref_values[f][:, idx], axis=1)
@@ -130,7 +146,8 @@ def explain(r: dict, x: dict, words: list[dict], env: Envelope) -> str:
     if typ == "pace":
         tip = (f"Slow down from '{w0['word']}' to '{w1['word']}'." if side > 0
                else f"Pick up the pace from '{w0['word']}' to '{w1['word']}'.")
-        what = "speaking rate" if f == "rate" else "speaking rate relative to your own pace"
+        what = {"rate": "speaking rate", "rate_phr": "phrase speaking rate relative to your own pace"}.get(
+            f, "speaking rate relative to your own pace")
     elif typ == "missing_pause":
         tip = f"Pause after '{w0['word']}'."
         what = f"pause after '{w0['word']}'"
@@ -140,7 +157,8 @@ def explain(r: dict, x: dict, words: list[dict], env: Envelope) -> str:
     elif typ == "monotone":
         peak = idx[int(np.nanargmax(np.nan_to_num(env.hi["pitch_range"][idx], nan=-1)))]
         tip = f"Lift pitch on '{words[peak]['word']}'."
-        what = "pitch range" if f == "pitch_range" else "pitch range relative to your own range"
+        what = {"pitch_range": "pitch range", "pitch_spread_phr": "phrase pitch movement relative to your own"}.get(
+            f, "pitch range relative to your own range")
     elif typ == "missed_emphasis":
         tip = f"Stress '{w0['word']}'."
         what = "pitch peak over neighbours" if f == "prom_pitch" else "loudness peak over neighbours"
