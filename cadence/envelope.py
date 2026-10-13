@@ -13,6 +13,7 @@ read only at consensus stress points.
 """
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass, field
 
 import numpy as np
@@ -36,7 +37,12 @@ CHANNELS = [
     ("rate_rel", -1, "pace"),
     ("pitch_range_rel", -1, "monotone"),
 ]
+# v3 (2026-10-14): phrase-level channels, appended to keep v1/v2 channel indices unchanged.
+# Phrase rate normalises each word's rate by the reader's median phrase rate; pitch spread
+# normalises the phrase's p90–p10 pitch spread by the median over phrases.
+CHANNELS += [("rate_phr", +1, "pace"), ("rate_phr", -1, "pace"), ("pitch_spread_phr", -1, "monotone")]
 REL_FEATURES = {"rate_rel", "pitch_range_rel"}
+PHRASE_FEATURES = {"rate_phr", "pitch_spread_phr"}
 # v2: a reader "peaks" on a word only if the peak is perceptible. v1 counted any positive
 # prominence, so 0.1-0.3 dB bumps made consensus "stress points" nobody hears, and missed
 # emphasis became the most common false alarm. ~1.5 st is the usual threshold for a pitch
@@ -55,6 +61,7 @@ TRANSFORM = {
     "rate_rel": (lambda v: np.log2(np.maximum(v, 0.05)), lambda u: 2.0 ** u),
     "pitch_range_rel": (lambda v: np.log2(np.maximum(v, 0.05)), lambda u: 2.0 ** u),
 }
+TRANSFORM.update({"rate_phr": TRANSFORM["rate_rel"], "pitch_spread_phr": TRANSFORM["pitch_range_rel"]})
 
 
 def add_derived(feats: dict) -> dict:
@@ -67,6 +74,42 @@ def add_derived(feats: dict) -> dict:
         out["rate_rel"] = r / np.nanmedian(r)
         pr = np.asarray(feats["pitch_range"], float)
         out["pitch_range_rel"] = (pr + 1.0) / (np.nanmedian(pr) + 1.0)
+    return out
+
+
+def phrase_ids(pauses: np.ndarray) -> np.ndarray:
+    """Per-word phrase index from a (K, W) pause matrix.
+
+    Boundary after word i when >= STRESS_FRACTION of readers have pause[i] >= 0.05.
+    The last word never starts a new phrase.
+    """
+    br = (np.nan_to_num(pauses) >= 0.05).mean(0) >= STRESS_FRACTION
+    br[-1] = False
+    return np.concatenate([[0], np.cumsum(br[:-1])]).astype(int)
+
+
+def with_phrases(feats: dict, pid: np.ndarray) -> dict:
+    """Add phrase-level rate and pitch-spread features, broadcast to each word.
+
+    rate_phr: phrase articulation rate / reader's median phrase rate.
+    pitch_spread_phr: (p90 - p10 of pitch in phrase + 1) / (median over phrases + 1).
+    NaN where syl/dur are absent or pitch is all-NaN within a phrase.
+    """
+    out = dict(feats)
+    W = len(pid)
+    rate, spread = np.full(W, np.nan), np.full(W, np.nan)
+    if "syl" in feats and "dur" in feats:
+        for p in np.unique(pid):
+            m = pid == p
+            rate[m] = feats["syl"][m].sum() / feats["dur"][m].sum()
+            v = feats["pitch"][m]
+            v = v[np.isfinite(v)]
+            if len(v) >= 2:
+                spread[m] = np.percentile(v, 90) - np.percentile(v, 10)
+    with np.errstate(all="ignore"):
+        out["rate_phr"] = rate / np.nanmedian(rate) if np.isfinite(rate).any() else rate
+        out["pitch_spread_phr"] = ((spread + 1) / (np.nanmedian(spread) + 1)
+                                   if np.isfinite(spread).any() else spread)
     return out
 
 
@@ -88,6 +131,7 @@ class Envelope:
     ref_values: dict[str, np.ndarray] = field(repr=False, default_factory=dict)  # raw units, (K, W)
     stress_pitch_p: np.ndarray | None = None  # v2: perceptible peaks only (STRESS_MIN)
     stress_loud_p: np.ndarray | None = None
+    phrase_id: np.ndarray | None = None  # v3: per-word phrase index (from phrase_ids)
 
     def stress(self, perceptual: bool) -> tuple[np.ndarray, np.ndarray]:
         return (self.stress_pitch_p, self.stress_loud_p) if perceptual else (self.stress_pitch, self.stress_loud)
@@ -100,8 +144,11 @@ class Envelope:
 def build(ref_feats: list[dict[str, np.ndarray]]) -> Envelope:
     k = len(ref_feats)
     ref_feats = [add_derived(r) for r in ref_feats]
+    pid = phrase_ids(np.stack([r["pause"] for r in ref_feats]))
+    ref_feats = [with_phrases(r, pid) for r in ref_feats]
     vals = {f: np.stack([r[f] for r in ref_feats]) for f in ENV_FEATURES}
-    with np.errstate(all="ignore"):
+    with np.errstate(all="ignore"), warnings.catch_warnings():
+        warnings.simplefilter("ignore", RuntimeWarning)
         lo = {f: np.nanmin(fwd(f, v), 0) for f, v in vals.items()}
         hi = {f: np.nanmax(fwd(f, v), 0) for f, v in vals.items()}
 
@@ -110,7 +157,8 @@ def build(ref_feats: list[dict[str, np.ndarray]]) -> Envelope:
         return peaks.mean(0) >= STRESS_FRACTION
 
     return Envelope(lo, hi, stress("prom_pitch"), stress("prom_loud"), k, vals,
-                    stress("prom_pitch", STRESS_MIN["prom_pitch"]), stress("prom_loud", STRESS_MIN["prom_loud"]))
+                    stress("prom_pitch", STRESS_MIN["prom_pitch"]), stress("prom_loud", STRESS_MIN["prom_loud"]),
+                    phrase_id=pid)
 
 
 def widths(env: Envelope) -> dict[str, float]:
@@ -124,17 +172,29 @@ def widths(env: Envelope) -> dict[str, float]:
 
 
 def deviations(x: dict[str, np.ndarray], env: Envelope, margin: dict, scale: dict,
-               relative: bool = False, stress_floor: bool = False) -> dict:
+               relative: bool = False, stress_floor: bool = False, phrase: bool = False) -> dict:
     """Per-channel, per-word d values (0 inside the envelope).
 
     relative=False and stress_floor=False reproduce the v1 detector exactly.
+    phrase=True activates phrase-level channels (rate_phr, pitch_spread_phr) and zeros
+    word-level REL_FEATURES channels (phrase replaces them). When phrase=False, phrase
+    channels give zeros and v1/v2 output is byte-identical to before.
     """
     x = add_derived(x)
+    if env.phrase_id is not None:
+        x = with_phrases(x, env.phrase_id)
     sp, sl = env.stress(stress_floor)
     out = {}
+    W = len(x["rate"])
     for f, side, typ in CHANNELS:
-        if f in REL_FEATURES and not relative:
-            out[(f, side)] = np.zeros(len(x["rate"]))
+        if f in REL_FEATURES and (not relative or phrase):
+            out[(f, side)] = np.zeros(W)
+            continue
+        if f in PHRASE_FEATURES and not phrase:
+            out[(f, side)] = np.zeros(W)
+            continue
+        if f in PHRASE_FEATURES and env.phrase_id is None:
+            out[(f, side)] = np.zeros(W)
             continue
         L = env.lo[f] - margin.get(f, 0.0)
         U = env.hi[f] + margin.get(f, 0.0)

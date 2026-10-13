@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: Task 1 dataset v3 emphasis rule implemented)
+> Last updated: 2026-10-14 (session 10: Task 2 phrase segmentation and phrase-level features implemented)
 
 ## 1. What this project is
 
@@ -446,3 +446,17 @@ memory pressure.
     the legacy behaviour byte-for-byte. `"dataset_version"` key added to every clip dict.
   - `data/DATA_CARD.md`: Version history section added.
   - New test: `test_emphasis_targets_perceptible_only` in `tests/test_core.py`.
+- **2026-10-14 (session 10, Task 2): phrase segmentation and phrase-level rate / pitch-spread features.**
+  - `features.py`: added `word_basics(words)` returning `syl`/`dur`; `UNITS` updated with
+    `rate_phr`/`pitch_spread_phr`; `word_features` now emits `syl` and `dur`.
+  - `envelope.py`: `PHRASE_FEATURES`, three new phrase channels appended to `CHANNELS` (indices
+    11–13; v1/v2 indices unchanged); `TRANSFORM` updated; `phrase_ids(pauses)` and
+    `with_phrases(feats, pid)` added; `Envelope.phrase_id` field (last, default None); `build`
+    computes phrase_ids from ref pauses and applies `with_phrases` to all refs; `deviations`
+    gains `phrase: bool = False` — phrase channels give zeros by default (byte-identical to v2),
+    REL_FEATURES channels are zeroed when `phrase=True`.
+  - `evaluate.py::_record`, `pipeline.py::load_record`: backfill `syl`/`dur` from words before
+    `add_derived`, so existing JSON records without those keys still work.
+  - `tests/test_core.py`: `feats()` fixture initialises PHRASE_FEATURES to NaN (no syl/dur);
+    four new tests: `test_phrase_ids_consensus`, `test_phrase_ids_no_consensus_pause`,
+    `test_word_basics_backfilled`, `test_phrase_feats_nan_safe`. 15 tests pass, 0 warnings.

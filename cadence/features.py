@@ -21,6 +21,7 @@ FEATURES = ["rate", "pause", "pitch_range", "loud", "prom_pitch", "prom_loud", "
 UNITS = {"rate": "syll/s", "pause": "s", "pitch_range": "st", "loud": "dB",
          "rate_rel": "x", "pitch_range_rel": "x",
          "prom_pitch": "st", "prom_loud": "dB", "pitch": "st"}
+UNITS.update({"rate_phr": "x", "pitch_spread_phr": "x"})
 F0_MIN, F0_MAX = 75.0, 500.0
 MIN_PAUSE = 0.05  # gaps shorter than this are stop closures, not pauses
 
@@ -31,6 +32,12 @@ def syllables(word: str) -> int:
     if w.endswith("e") and n > 1 and not w.endswith(("le", "ee", "ye")):
         n -= 1
     return max(1, n)
+
+
+def word_basics(words: list[dict]) -> dict[str, np.ndarray]:
+    """Syllable count and word duration for each word (used to backfill syl/dur)."""
+    return {"syl": np.array([syllables(w["word"]) for w in words], float),
+            "dur": np.array([max(w["end"] - w["start"], 0.02) for w in words], float)}
 
 
 def pitch_limits(snd: parselmouth.Sound) -> tuple[float, float]:
@@ -174,6 +181,7 @@ def word_features(words: list[dict], c: dict, norm: str = "level") -> dict[str, 
             loud3[i] = np.average(loud[a:b][ok], weights=dur[a:b][ok])
 
     feats = {
+        **word_basics(words),
         "rate": rate, "pause": pause, "pitch_range": pitch_range, "loud": loud3,
         "prom_pitch": prominence(pitch_max), "prom_loud": prominence(loud_max),
         "pitch": pitch_med,

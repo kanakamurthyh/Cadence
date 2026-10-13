@@ -72,8 +72,10 @@ def manifest(tid):
 @lru_cache(maxsize=None)
 def _record(path_str: str):
     from pathlib import Path
+    from .features import word_basics
     d = json.loads(Path(path_str).read_text())
     feats = {k: np.array([np.nan if v is None else v for v in vals], float) for k, vals in d["feats"].items()}
+    feats = {**word_basics(d["words"]), **feats}
     return d["words"], add_derived(feats), d["meta"]
 
 

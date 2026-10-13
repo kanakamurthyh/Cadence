@@ -10,7 +10,10 @@ W = 12
 
 def feats(rate=4.0, pause=0.0, rng_=6.0, loud=0.0, seed=0):
     r = np.random.default_rng(seed)
-    f = {k: np.zeros(W) for k in E.ENV_FEATURES + ["pitch"]}
+    # Phrase features require syl/dur which this fixture omits; initialise to NaN
+    # so that build()+with_phrases() yields NaN→NaN and the K=1 envelope test passes.
+    f = {k: (np.full(W, np.nan) if k in E.PHRASE_FEATURES else np.zeros(W))
+         for k in E.ENV_FEATURES + ["pitch"]}
     f["rate"] = rate + r.normal(0, 0.2, W)
     f["pause"] = np.full(W, pause)
     f["pitch_range"] = rng_ + r.normal(0, 0.5, W)
@@ -139,3 +142,25 @@ def test_emphasis_targets_perceptible_only():
     stress[6] = True  # one perceptible consensus point only
     spans = inject.choose_spans(words, f, stress, np.random.default_rng(0), stress_rule=2)
     assert spans["missed_emphasis"] == [(6, 6)]
+
+
+def test_phrase_ids_consensus():
+    p = np.zeros((4, 8)); p[:, 2] = 0.3; p[:3, 5] = 0.3  # all pause after w2, 3 of 4 after w5
+    assert list(E.phrase_ids(p)) == [0, 0, 0, 1, 1, 1, 2, 2]
+
+
+def test_phrase_ids_no_consensus_pause():
+    p = np.zeros((4, 8)); p[0, 3] = 0.5
+    assert set(E.phrase_ids(p)) == {0}
+
+
+def test_word_basics_backfilled():
+    from cadence.features import word_basics
+    b = word_basics([{"word": "water", "start": 0.0, "end": 0.5}])
+    assert b["syl"][0] == 2 and abs(b["dur"][0] - 0.5) < 1e-9
+
+
+def test_phrase_feats_nan_safe():
+    f = {"syl": np.ones(6), "dur": np.full(6, 0.25), "pitch": np.array([np.nan] * 3 + [0, 2, 4.0])}
+    out = E.with_phrases(f, np.array([0, 0, 0, 1, 1, 1]))
+    assert np.isnan(out["pitch_spread_phr"][:3]).all() and np.isfinite(out["rate_phr"]).all()

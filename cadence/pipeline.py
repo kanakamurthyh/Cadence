@@ -54,8 +54,11 @@ def save_record(rec: dict, path: Path, meta: dict | None = None) -> None:
 def load_record(path: Path, with_audio: bool = True) -> dict:
     d = json.loads(path.with_suffix(".json").read_text())
     from .envelope import add_derived
-    d["feats"] = add_derived({k: np.array([np.nan if v is None else v for v in vals], float)
-                              for k, vals in d["feats"].items()})
+    from .features import word_basics
+    feats = {k: np.array([np.nan if v is None else v for v in vals], float)
+             for k, vals in d["feats"].items()}
+    feats = {**word_basics(d["words"]), **feats}
+    d["feats"] = add_derived(feats)
     d["id"] = path.stem
     if with_audio:
         d["x"] = audio.read_wav(path.with_suffix(".wav"))
