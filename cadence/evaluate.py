@@ -20,7 +20,7 @@ from . import features
 from .audio import read_wav
 from .baselines import generic_norms
 from .detect import DIMENSION, DIMENSIONS, Params, detect, scores
-from .envelope import ENV_FEATURES, FLAW_TYPES, build, fwd, widths
+from .envelope import ENV_FEATURES, FLAW_TYPES, add_derived, build, fwd, widths
 from .metrics import aggregate, false_alarms_per_min, score_clip, spearman
 from .pipeline import REFS, ROOT
 
@@ -35,6 +35,8 @@ class Config:
     k: int | None = None
     norm: str = "level"
     margin: bool = True
+    relative: bool = True       # v2 self-relative pace/monotone channels
+    stress_floor: bool = True   # v2 perceptible stress points
 
     @property
     def name(self) -> str:
@@ -46,6 +48,12 @@ class Config:
             s += f", norm={self.norm}"
         if not self.margin:
             s += ", no margin"
+        if not self.relative and not self.stress_floor:
+            s += ", v1 detector"
+        elif not self.relative:
+            s += ", no relative channels"
+        elif not self.stress_floor:
+            s += ", no stress floor"
         return s
 
 
@@ -66,7 +74,7 @@ def _record(path_str: str):
     from pathlib import Path
     d = json.loads(Path(path_str).read_text())
     feats = {k: np.array([np.nan if v is None else v for v in vals], float) for k, vals in d["feats"].items()}
-    return d["words"], feats, d["meta"]
+    return d["words"], add_derived(feats), d["meta"]
 
 
 @lru_cache(maxsize=None)
@@ -126,9 +134,22 @@ def clip_items(tid: str, kinds=("ladder",)):
 def run(cfg: Config, p: Params, tid: str) -> dict:
     """Everything measured for one config on one text."""
     lad, by_type, by_level, sev_pairs = [], {t: [] for t in FLAW_TYPES}, {lv: [] for lv in range(1, 6)}, []
-    outside = []
+    outside, outside_edit = [], []
+    pred_n, pred_hit = {t: 0 for t in FLAW_TYPES}, {t: 0 for t in FLAW_TYPES}
+    pred_n_edit = {t: 0 for t in FLAW_TYPES}  # excluding flags the untouched source also gets
+    null_cache = {}
     for c in clip_items(tid):
         preds, words = predict(cfg, p, "clip", tid, c["id"], c["source"])
+        if c["source"] not in null_cache:  # what the detector says about the untouched source
+            null_cache[c["source"]] = predict(cfg, p, "clip", tid, f"{tid}_null_{c['source']}", c["source"])[0]
+        for q in preds:
+            hit = any(q["type"] == l["type"] and min(q["end"], l["end"]) > max(q["start"], l["start"])
+                      for l in c["labels"])
+            source_style = any(q["type"] == n["type"] and q["w0"] <= n["w1"] + 1 and n["w0"] <= q["w1"] + 1
+                               for n in null_cache[c["source"]])
+            pred_n[q["type"]] += 1
+            pred_hit[q["type"]] += hit
+            pred_n_edit[q["type"]] += hit or not source_style
         row = score_clip(c["labels"], preds)
         lad.append(row)
         lab = c["labels"][0]
@@ -137,8 +158,14 @@ def run(cfg: Config, p: Params, tid: str) -> dict:
         same = [q for q in preds if q["type"] == lab["type"]
                 and min(q["end"], lab["end"]) > max(q["start"], lab["start"])]
         sev_pairs.append((lab["severity"], max([q.get("severity", 0) for q in same], default=0.0)))
-        outside.append(([q for q in preds if not any(
-            min(q["end"], l["end"]) > max(q["start"], l["start"]) for l in c["labels"])], duration_min(words)))
+        out_q = [q for q in preds if not any(
+            min(q["end"], l["end"]) > max(q["start"], l["start"]) for l in c["labels"])]
+        outside.append((out_q, duration_min(words)))
+        # flags that the null-edit copy of the same source also gets are the source's own style,
+        # already counted once in the good-pair false alarms; don't count them again per clip
+        outside_edit.append(([q for q in out_q if not any(
+            q["type"] == n["type"] and q["w0"] <= n["w1"] + 1 and n["w0"] <= q["w1"] + 1  # same words
+            for n in null_cache[c["source"]])], duration_min(words)))
     comp = [score_clip(c["labels"], predict(cfg, p, "clip", tid, c["id"], c["source"])[0])
             for c in clip_items(tid, ("compound",))]
     # good-vs-good, leave one out: every good rendition judged against the others
@@ -161,6 +188,13 @@ def run(cfg: Config, p: Params, tid: str) -> dict:
         "fa_per_min_good_pairs": false_alarms_per_min(loo_preds, loo_min),
         "fa_per_min_null_edit": false_alarms_per_min(null_preds, null_min),
         "fa_per_min_ladder_outside_labels": false_alarms_per_min([o[0] for o in outside], [o[1] for o in outside]),
+        "fa_per_min_ladder_edit_attributable": false_alarms_per_min([o[0] for o in outside_edit],
+                                                                    [o[1] for o in outside_edit]),
+        "per_type": {t: {"recall_matching": aggregate(by_type[t])["matching_score"],
+                         "recall_time": aggregate(by_type[t])["time_recall"],
+                         "precision_time": (pred_hit[t] / pred_n[t]) if pred_n[t] else float("nan"),
+                         "precision_edit": (pred_hit[t] / pred_n_edit[t]) if pred_n_edit[t] else float("nan"),
+                         "predictions": pred_n[t]} for t in FLAW_TYPES},
         "severity_spearman": spearman(*zip(*sev_pairs)) if sev_pairs else float("nan"),
     }
 
@@ -173,7 +207,8 @@ def objective(r: dict) -> float:
 
 def calibrate(cfg: Config, tid: str = "T1", full: bool = True) -> Params:
     margin, scale = fit_margin_scale(cfg, tid)
-    p = Params(margin=margin, scale=scale, fitted_on=f"{tid} ({cfg.name})")
+    p = Params(margin=margin, scale=scale, fitted_on=f"{tid} ({cfg.name})",
+               relative_channels=cfg.relative, stress_floor=cfg.stress_floor)
     if cfg.method == "B0":
         return p
     # one threshold per flaw type, by coordinate ascent: maximize T1 Matching Score
@@ -228,11 +263,14 @@ def _fit_severity_and_lambda(cfg: Config, p: Params, tid: str) -> None:
     if perceived:
         n = len(summarize_listening().get("complete_listeners", []))
         p.sev_scale = f"perceived 0-4 (listening test on T1, {n} complete listeners)"
-    # lambda_d: a severity-3 flaw of that dimension halves its score
-    for d, v in loads.items():
-        v = [x for x in v if x > 0]
-        if v:
-            p.lam[d] = float(np.log(2) / np.median(v))
+    # lambda: a median severity-3 flaw halves its dimension's score. One value pooled over all
+    # dimensions (d is already normalized per feature): per-dimension fits from a handful of
+    # tiny detections exploded (pacing 68, emphasis 86-172) while undetected dimensions kept an
+    # arbitrary default of 20, so one 1 s deviation cost 7 points in one dimension and 3 in another.
+    pooled = [x for v in loads.values() for x in v if x > 0]
+    if pooled:
+        lam = float(np.log(2) / np.median(pooled))
+        p.lam = {d: lam for d in DIMENSIONS}
 
 
 def score_readers(cfg: Config, p: Params, tid: str) -> dict:

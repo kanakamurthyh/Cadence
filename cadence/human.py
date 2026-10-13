@@ -174,7 +174,7 @@ def reader_excerpts(tid: str) -> list[tuple[str, str]]:
     out = RANK / "excerpts" / tid
     out.mkdir(parents=True, exist_ok=True)
     items = []
-    for p in sorted((REFS / tid).glob("lv*.wav")):
+    for p in sorted(q for q in (REFS / tid).glob("*.wav")):
         q = out / p.name
         if not q.exists():
             x, _ = sf.read(p, dtype="float32")

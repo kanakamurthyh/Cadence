@@ -1,0 +1,72 @@
+{
+ "text_id": "T4",
+ "clip_id": "T4_pace-rushed_s0_L4",
+ "flawed_wav": "data/demo/demo_T4_flawed.wav",
+ "source_id": "lv8387_06_julia_niedermaier",
+ "source_wav": "data/demo/demo_T4_reference.wav",
+ "source_speaker": "Julia Niedermaier",
+ "source_licence": "Public domain (LibriVox; Public Domain Mark 1.0)",
+ "label": {
+  "end": 35.0214,
+  "param": 0.62,
+  "severity": 4,
+  "start": 33.955,
+  "subtype": "rushed",
+  "type": "pace",
+  "w0": 86,
+  "w1": 90
+ },
+ "label_words": "lives that that nation might",
+ "methods": {
+  "B0 generic norms": {
+   "matched": false,
+   "iou": 0.158,
+   "region": {
+    "type": "pace",
+    "start": 28.623,
+    "end": 35.383,
+    "w0": 69,
+    "w1": 91,
+    "d_mean": 1.0
+   },
+   "types_overlapping_label": [
+    "pace"
+   ],
+   "n_flags": 10
+  },
+  "B1 single reference (K=1)": {
+   "matched": false,
+   "iou": 0.0,
+   "region": null,
+   "types_overlapping_label": [],
+   "n_flags": 2
+  },
+  "B2 consensus envelope (K=all)": {
+   "matched": true,
+   "iou": 0.973,
+   "region": {
+    "type": "pace",
+    "start": 33.963,
+    "end": 35.043,
+    "w0": 86,
+    "w1": 90,
+    "d_mean": 0.8675645919015297
+   },
+   "types_overlapping_label": [
+    "pace"
+   ],
+   "n_flags": 3
+  }
+ },
+ "b2_flags_on_untouched_source": [
+  {
+   "type": "monotone",
+   "w0": 66,
+   "w1": 67,
+   "start": 28.105,
+   "end": 28.515
+  }
+ ],
+ "candidates_considered": 16,
+ "selection_rule": "rushed pace if B2 matches it; else first of pace, monotone, missed_emphasis, misplaced_pause, missing_pause, volume_fade; prefer cases the baselines miss; then higher IoU"
+}

@@ -1,0 +1,221 @@
+{
+ "checks": {
+  "attribution OFF": 5,
+  "attribution ok": 50,
+  "bounds ok": 336,
+  "clicks FAIL": 1,
+  "clicks ok": 109,
+  "direction ok": 328,
+  "direction weak": 8,
+  "duration ok": 318,
+  "null ok": 30,
+  "timemap FAIL": 29,
+  "timemap ok": 307
+ },
+ "problems": [
+  "T1_misplaced_pause_s0_L3: silence measured after word 17, label says word 16 (time span correct within 60 ms; source boundary had no gap)",
+  "T1_misplaced_pause_s0_L4: silence measured after word 17, label says word 16 (time span correct within 60 ms; source boundary had no gap)",
+  "T1_misplaced_pause_s0_L5: silence measured after word 17, label says word 16 (time span correct within 60 ms; source boundary had no gap)",
+  "T1_missed_emphasis_s1_L3: label edges 170 ms from the re-aligned words",
+  "T1_missed_emphasis_s1_L4: label edges 180 ms from the re-aligned words",
+  "T1_missed_emphasis_s1_L5: label edges 180 ms from the re-aligned words",
+  "T1_volume_fade_s0_L5: label edges 120 ms from the re-aligned words",
+  "T1_volume_fade_s1_L4: label edges 130 ms from the re-aligned words",
+  "T1_volume_fade_s1_L5: label edges 260 ms from the re-aligned words",
+  "T2_pace-rushed_s0_L4: label edges 111 ms from the re-aligned words",
+  "T2_pace-rushed_s0_L5: label edges 108 ms from the re-aligned words",
+  "T3_pace-dragging_s1_L3: label edges 201 ms from the re-aligned words",
+  "T3_pace-dragging_s1_L4: label edges 239 ms from the re-aligned words",
+  "T3_pace-dragging_s1_L5: label edges 272 ms from the re-aligned words",
+  "T3_volume_fade_s1_L3: label edges 130 ms from the re-aligned words",
+  "T3_volume_fade_s1_L4: label edges 150 ms from the re-aligned words",
+  "T3_volume_fade_s1_L5: label edges 160 ms from the re-aligned words",
+  "T6_missing_pause_s1_L5: discontinuity at a join (1.02x the clip's 99.9th pct)",
+  "T6_missed_emphasis_s0_L3: label edges 160 ms from the re-aligned words",
+  "T6_missed_emphasis_s0_L4: label edges 160 ms from the re-aligned words",
+  "T6_missed_emphasis_s0_L5: label edges 160 ms from the re-aligned words",
+  "T6_volume_fade_s1_L3: label edges 200 ms from the re-aligned words",
+  "T6_volume_fade_s1_L4: label edges 220 ms from the re-aligned words",
+  "T6_volume_fade_s1_L5: label edges 220 ms from the re-aligned words",
+  "T6_compound_0: label edges 161 ms from the re-aligned words",
+  "T6_compound_1: label edges 200 ms from the re-aligned words"
+ ],
+ "rows": 371,
+ "severity_distribution": {
+  "misplaced_pause L1": {
+   "measurable_frac": 1.0,
+   "median_change": 1.926,
+   "n": 10
+  },
+  "misplaced_pause L2": {
+   "measurable_frac": 1.0,
+   "median_change": 2.7655,
+   "n": 10
+  },
+  "misplaced_pause L3": {
+   "measurable_frac": 1.0,
+   "median_change": 3.433,
+   "n": 10
+  },
+  "misplaced_pause L4": {
+   "measurable_frac": 1.0,
+   "median_change": 3.9819,
+   "n": 15
+  },
+  "misplaced_pause L5": {
+   "measurable_frac": 1.0,
+   "median_change": 4.3785,
+   "n": 10
+  },
+  "missed_emphasis L1": {
+   "measurable_frac": 1.0,
+   "median_change": 0.9446,
+   "n": 10
+  },
+  "missed_emphasis L2": {
+   "measurable_frac": 1.0,
+   "median_change": 1.9626,
+   "n": 10
+  },
+  "missed_emphasis L3": {
+   "measurable_frac": 1.0,
+   "median_change": 2.9247,
+   "n": 10
+  },
+  "missed_emphasis L4": {
+   "measurable_frac": 1.0,
+   "median_change": 4.0637,
+   "n": 18
+  },
+  "missed_emphasis L5": {
+   "measurable_frac": 1.0,
+   "median_change": 4.8364,
+   "n": 10
+  },
+  "missing_pause L1": {
+   "measurable_frac": 1.0,
+   "median_change": 0.3043,
+   "n": 10
+  },
+  "missing_pause L2": {
+   "measurable_frac": 1.0,
+   "median_change": 0.6571,
+   "n": 10
+  },
+  "missing_pause L3": {
+   "measurable_frac": 1.0,
+   "median_change": 1.1329,
+   "n": 10
+  },
+  "missing_pause L4": {
+   "measurable_frac": 1.0,
+   "median_change": 1.8791,
+   "n": 15
+  },
+  "missing_pause L5": {
+   "measurable_frac": 1.0,
+   "median_change": 3.3001,
+   "n": 10
+  },
+  "monotone L1": {
+   "measurable_frac": 1.0,
+   "median_change": 0.2326,
+   "n": 10
+  },
+  "monotone L2": {
+   "measurable_frac": 1.0,
+   "median_change": 0.4849,
+   "n": 10
+  },
+  "monotone L3": {
+   "measurable_frac": 1.0,
+   "median_change": 0.777,
+   "n": 10
+  },
+  "monotone L4": {
+   "measurable_frac": 1.0,
+   "median_change": 1.1144,
+   "n": 20
+  },
+  "monotone L5": {
+   "measurable_frac": 1.0,
+   "median_change": 1.315,
+   "n": 10
+  },
+  "pace_dragging L1": {
+   "measurable_frac": 0.8,
+   "median_change": 0.0914,
+   "n": 5
+  },
+  "pace_dragging L2": {
+   "measurable_frac": 1.0,
+   "median_change": 0.2017,
+   "n": 5
+  },
+  "pace_dragging L3": {
+   "measurable_frac": 1.0,
+   "median_change": 0.2825,
+   "n": 5
+  },
+  "pace_dragging L4": {
+   "measurable_frac": 1.0,
+   "median_change": 0.4051,
+   "n": 7
+  },
+  "pace_dragging L5": {
+   "measurable_frac": 1.0,
+   "median_change": 0.5803,
+   "n": 5
+  },
+  "pace_rushed L1": {
+   "measurable_frac": 1.0,
+   "median_change": 0.1198,
+   "n": 5
+  },
+  "pace_rushed L2": {
+   "measurable_frac": 1.0,
+   "median_change": 0.2405,
+   "n": 5
+  },
+  "pace_rushed L3": {
+   "measurable_frac": 1.0,
+   "median_change": 0.381,
+   "n": 5
+  },
+  "pace_rushed L4": {
+   "measurable_frac": 1.0,
+   "median_change": 0.5124,
+   "n": 7
+  },
+  "pace_rushed L5": {
+   "measurable_frac": 1.0,
+   "median_change": 0.636,
+   "n": 5
+  },
+  "volume_fade L1": {
+   "measurable_frac": 1.0,
+   "median_change": 1.8074,
+   "n": 10
+  },
+  "volume_fade L2": {
+   "measurable_frac": 1.0,
+   "median_change": 3.5731,
+   "n": 10
+  },
+  "volume_fade L3": {
+   "measurable_frac": 1.0,
+   "median_change": 5.7397,
+   "n": 10
+  },
+  "volume_fade L4": {
+   "measurable_frac": 1.0,
+   "median_change": 7.2872,
+   "n": 14
+  },
+  "volume_fade L5": {
+   "measurable_frac": 1.0,
+   "median_change": 10.229,
+   "n": 10
+  }
+ }
+}

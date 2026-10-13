@@ -19,6 +19,7 @@ from .audio import SR
 
 FEATURES = ["rate", "pause", "pitch_range", "loud", "prom_pitch", "prom_loud", "pitch"]
 UNITS = {"rate": "syll/s", "pause": "s", "pitch_range": "st", "loud": "dB",
+         "rate_rel": "x", "pitch_range_rel": "x",
          "prom_pitch": "st", "prom_loud": "dB", "pitch": "st"}
 F0_MIN, F0_MAX = 75.0, 500.0
 MIN_PAUSE = 0.05  # gaps shorter than this are stop closures, not pauses
@@ -177,6 +178,8 @@ def word_features(words: list[dict], c: dict, norm: str = "level") -> dict[str, 
         "prom_pitch": prominence(pitch_max), "prom_loud": prominence(loud_max),
         "pitch": pitch_med,
     }
+    from .envelope import add_derived
+    feats = add_derived(feats)
     if norm == "zscore":  # v1's bug, kept for the ablation only
         for k, v in feats.items():
             sd = np.nanstd(v)

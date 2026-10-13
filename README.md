@@ -42,6 +42,8 @@ Individual steps:
 | `cadence app` | Gradio dashboard: upload or record, envelope overlay, flaw cards, A/B playback, dataset explorer, evidence |
 | `cadence human` | Listening test and reader-ranking pages (port 7861) |
 | `cadence status` | Checklist: which human-data steps are done and consistent |
+| `cadence inventory` | Every recording: source, speaker, licence, files, alignment quality, speaker overlap |
+| `cadence labels` | Exports `data/labels/labels.{jsonl,csv}` and validates every synthetic clip |
 | `cadence natural` | Validates teammate takes and annotations, then evaluates natural flaws |
 | `cadence compare` | Baseline (`results/baseline_2026-10-13`) vs current results → `results/comparison.md` |
 | `cadence api` | FastAPI: `POST /analyze` (multipart `file`, `text_id`) |
@@ -55,6 +57,11 @@ Individual steps:
 | T1 | *Sea Fever*, Masefield. LibriVox weekly poetry, 2007 | 24 | Calibration only: thresholds, λ, severity mapping |
 | T2 | *Stopping by Woods on a Snowy Evening*, Frost. LibriVox | 23 | Test |
 | T3 | Gettysburg Address, closing paragraph. LibriVox (150th anniversary + 4 solo versions) | 19 | Test (oratory) |
+| T4 | Gettysburg Address, opening paragraph. Same 19 readings as T3 | 19 | Test (oratory); shares speakers with T3 |
+| T5 | FDR "Day of Infamy" opening. Original 1941 recording (public domain, NARA) + 1 LibriVox reading | 2 | Test (oratory); **blocked until ≥ 2 teammate takes** |
+
+TED/TEDx talks are CC BY-NC-ND 4.0, so no derivatives and no clips; they are listed as
+candidates only. See [`docs/DATA_LICENSING.md`](docs/DATA_LICENSING.md).
 
 All recordings are public domain (LibriVox). The dataset card is in [`data/DATA_CARD.md`](data/DATA_CARD.md).
 
@@ -73,24 +80,31 @@ the dominant feature. Missed emphasis is checked only at consensus stress points
 least 3/4 of the good readers peak in pitch or loudness. Each dimension score is
 10·exp(−λ_d Σ d̄_r·dur_r/T). See [`docs/technical_report.md`](docs/technical_report.md).
 
-## Results (T1 calibration only; T2/T3 held out; full tables in `results/results.md`)
+## Results (detector v2; thresholds fitted on T1 only; full tables in `results/results.md`)
 
-| Method | Matching Score T2 / T3 | False alarms/min on good readers T2 / T3 |
-|---|---|---|
-| B0 generic norms (Speaker Coach style) | 18% / 13% | 26.2 / 16.9 |
-| B1 single reference | 20% / 18% | 0.68 / 0.15 |
-| **B2 envelope, K=6 (ours)** | **30% / 32%** | 1.35 / 1.32 |
+T2–T4 are **development feedback**, because v2 was motivated partly by inspecting T3/T4.
+**T6** (Kipling's *If—*, 15 readers, no shared speakers) is the **untouched final test**: it was
+added after v2 was frozen and evaluated once. v1 results are frozen in `results/frozen_v1_2026-10-14/`.
 
-At matched false-alarm rates the envelope finds as many flaws as the single reference or
-more: 25% vs 20% at 0.68 FA/min on T2, and 32% vs 22% at 1.3 FA/min on T3. There is one tie,
-at T3's strictest point. Matching Score grows with K (20 → 20 → 27 → 30% on T2 for K = 1, 2, 4, 6).
+| Text | B0 generic norms | B1 single reference | B2 envelope (ours) |
+|---|---|---|---|
+| T3 Gettysburg, closing (dev) | 13%, 16.9 FA/min | 25%, 0.73 | 30%, 1.47 |
+| T4 Gettysburg, opening (dev) | 15%, 19.3 | 27%, 0.94 | **35%, 0.24** |
+| **T6 untouched** | 13%, 22.5 | **27%, 2.15** | 23%, 2.15 |
 
-- **Reproducibility:** reruns produce byte-identical JSON (`scripts/rerun_check.py`).
-- **Robustness:** MP3 compression and a wrong transcript word leave scores unchanged, but
-  noise costs 13 points at 20 dB SNR.
-- **Known failures:** pace and monotone are not caught at the shipped operating point
-  (≤ 1 false alarm/min on T1), and the envelope does not beat the generic-norms baseline on
-  compound clips.
+**On untouched data the envelope does not beat the single reference.** At ≤ 1 false alarm/min
+on T6, B1 scores 15% and B2 5%. The dashboard therefore offers B1 as a calibrated fallback
+("Comparison method").
+
+| Detection | Status |
+|---|---|
+| Misplaced pauses | Reliable: 60–80% recall, 100% precision |
+| Pace | Works on the speeches (50–60%), fails on T6 (0%) |
+| Volume fade, missing pause, monotone | 10–40% |
+| Missed emphasis | Not detected in v2 |
+
+**Demo** (`cadence demo`, Demo tab): a rushed-pace edit on T4 is found by B2 with IoU 0.97
+(onset error 8 ms). B1 misses it, and B0 smears it over 6.8 s.
 
 ## Status and honest deviations from the spec
 

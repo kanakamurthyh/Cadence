@@ -1,0 +1,211 @@
+{
+ "checks": {
+  "attribution OFF": 5,
+  "attribution ok": 39,
+  "bounds ok": 268,
+  "clicks ok": 87,
+  "direction ok": 260,
+  "direction weak": 8,
+  "duration ok": 254,
+  "null ok": 24,
+  "timemap FAIL": 19,
+  "timemap ok": 249
+ },
+ "problems": [
+  "T1_misplaced_pause_s0_L3: silence measured after word 17, label says word 16 (time span correct within 60 ms; source boundary had no gap)",
+  "T1_misplaced_pause_s0_L4: silence measured after word 17, label says word 16 (time span correct within 60 ms; source boundary had no gap)",
+  "T1_misplaced_pause_s0_L5: silence measured after word 17, label says word 16 (time span correct within 60 ms; source boundary had no gap)",
+  "T1_missed_emphasis_s1_L3: label edges 170 ms from the re-aligned words",
+  "T1_missed_emphasis_s1_L4: label edges 180 ms from the re-aligned words",
+  "T1_missed_emphasis_s1_L5: label edges 180 ms from the re-aligned words",
+  "T1_volume_fade_s0_L5: label edges 120 ms from the re-aligned words",
+  "T1_volume_fade_s1_L4: label edges 130 ms from the re-aligned words",
+  "T1_volume_fade_s1_L5: label edges 260 ms from the re-aligned words",
+  "T2_pace-rushed_s0_L4: label edges 111 ms from the re-aligned words",
+  "T2_pace-rushed_s0_L5: label edges 108 ms from the re-aligned words",
+  "T3_pace-dragging_s1_L3: label edges 201 ms from the re-aligned words",
+  "T3_pace-dragging_s1_L4: label edges 239 ms from the re-aligned words",
+  "T3_pace-dragging_s1_L5: label edges 272 ms from the re-aligned words",
+  "T3_volume_fade_s1_L3: label edges 130 ms from the re-aligned words",
+  "T3_volume_fade_s1_L4: label edges 150 ms from the re-aligned words",
+  "T3_volume_fade_s1_L5: label edges 160 ms from the re-aligned words"
+ ],
+ "rows": 296,
+ "severity_distribution": {
+  "misplaced_pause L1": {
+   "measurable_frac": 1.0,
+   "median_change": 1.9068,
+   "n": 8
+  },
+  "misplaced_pause L2": {
+   "measurable_frac": 1.0,
+   "median_change": 2.7548,
+   "n": 8
+  },
+  "misplaced_pause L3": {
+   "measurable_frac": 1.0,
+   "median_change": 3.4262,
+   "n": 8
+  },
+  "misplaced_pause L4": {
+   "measurable_frac": 1.0,
+   "median_change": 3.9773,
+   "n": 12
+  },
+  "misplaced_pause L5": {
+   "measurable_frac": 1.0,
+   "median_change": 4.375,
+   "n": 8
+  },
+  "missed_emphasis L1": {
+   "measurable_frac": 1.0,
+   "median_change": 0.9366,
+   "n": 8
+  },
+  "missed_emphasis L2": {
+   "measurable_frac": 1.0,
+   "median_change": 1.8657,
+   "n": 8
+  },
+  "missed_emphasis L3": {
+   "measurable_frac": 1.0,
+   "median_change": 2.7879,
+   "n": 8
+  },
+  "missed_emphasis L4": {
+   "measurable_frac": 1.0,
+   "median_change": 4.0634,
+   "n": 15
+  },
+  "missed_emphasis L5": {
+   "measurable_frac": 1.0,
+   "median_change": 4.56,
+   "n": 8
+  },
+  "missing_pause L1": {
+   "measurable_frac": 1.0,
+   "median_change": 0.3017,
+   "n": 8
+  },
+  "missing_pause L2": {
+   "measurable_frac": 1.0,
+   "median_change": 0.6571,
+   "n": 8
+  },
+  "missing_pause L3": {
+   "measurable_frac": 1.0,
+   "median_change": 1.1295,
+   "n": 8
+  },
+  "missing_pause L4": {
+   "measurable_frac": 1.0,
+   "median_change": 1.8635,
+   "n": 11
+  },
+  "missing_pause L5": {
+   "measurable_frac": 1.0,
+   "median_change": 3.2779,
+   "n": 8
+  },
+  "monotone L1": {
+   "measurable_frac": 1.0,
+   "median_change": 0.2277,
+   "n": 8
+  },
+  "monotone L2": {
+   "measurable_frac": 1.0,
+   "median_change": 0.4558,
+   "n": 8
+  },
+  "monotone L3": {
+   "measurable_frac": 1.0,
+   "median_change": 0.6831,
+   "n": 8
+  },
+  "monotone L4": {
+   "measurable_frac": 1.0,
+   "median_change": 0.9883,
+   "n": 16
+  },
+  "monotone L5": {
+   "measurable_frac": 1.0,
+   "median_change": 1.1779,
+   "n": 8
+  },
+  "pace_dragging L1": {
+   "measurable_frac": 0.75,
+   "median_change": 0.0919,
+   "n": 4
+  },
+  "pace_dragging L2": {
+   "measurable_frac": 1.0,
+   "median_change": 0.2159,
+   "n": 4
+  },
+  "pace_dragging L3": {
+   "measurable_frac": 1.0,
+   "median_change": 0.3172,
+   "n": 4
+  },
+  "pace_dragging L4": {
+   "measurable_frac": 1.0,
+   "median_change": 0.4351,
+   "n": 5
+  },
+  "pace_dragging L5": {
+   "measurable_frac": 1.0,
+   "median_change": 0.6015,
+   "n": 4
+  },
+  "pace_rushed L1": {
+   "measurable_frac": 1.0,
+   "median_change": 0.1274,
+   "n": 4
+  },
+  "pace_rushed L2": {
+   "measurable_frac": 1.0,
+   "median_change": 0.2412,
+   "n": 4
+  },
+  "pace_rushed L3": {
+   "measurable_frac": 1.0,
+   "median_change": 0.3728,
+   "n": 4
+  },
+  "pace_rushed L4": {
+   "measurable_frac": 1.0,
+   "median_change": 0.5057,
+   "n": 6
+  },
+  "pace_rushed L5": {
+   "measurable_frac": 1.0,
+   "median_change": 0.6212,
+   "n": 4
+  },
+  "volume_fade L1": {
+   "measurable_frac": 1.0,
+   "median_change": 1.8772,
+   "n": 8
+  },
+  "volume_fade L2": {
+   "measurable_frac": 1.0,
+   "median_change": 3.5731,
+   "n": 8
+  },
+  "volume_fade L3": {
+   "measurable_frac": 1.0,
+   "median_change": 5.9444,
+   "n": 8
+  },
+  "volume_fade L4": {
+   "measurable_frac": 1.0,
+   "median_change": 7.5472,
+   "n": 11
+  },
+  "volume_fade L5": {
+   "measurable_frac": 1.0,
+   "median_change": 10.442,
+   "n": 8
+  }
+ }
+}

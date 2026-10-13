@@ -104,6 +104,26 @@ def transcribe(x: np.ndarray, em: np.ndarray | None = None) -> list[dict]:
     return words
 
 
+# Is this recording a reading of the selected text? Compared on letters, not whole words:
+# the recognizer (trained on US audiobook speech) mishears many words in phone recordings
+# and other accents ("whose words athese are writing i know"). Measured on 2026-10-13:
+# a full non-native phone reading of T2 scored 0.63 (exact words: 0.41); the same reading
+# against the other texts 0.08-0.21; unrelated speech 0.03-0.10; the title alone 0.06.
+MIN_COVERAGE = 0.40
+
+
+def letter_coverage(heard: list[str], transcript: str) -> float:
+    """Share of the transcript's letters found, in order, in what the recognizer heard."""
+    a = re.sub(r"[^a-z]", "", " ".join(heard).lower())
+    b = re.sub(r"[^a-z]", "", transcript.lower())
+    m = SequenceMatcher(None, a, b, autojunk=False)
+    return sum(blk.size for blk in m.get_matching_blocks()) / max(len(b), 1)
+
+
+class TextNotFound(ValueError):
+    """The recording does not contain (most of) the selected text."""
+
+
 def locate_text(x: np.ndarray, transcript: str, pad_s: float = 0.25) -> tuple[float, float]:
     """Find where `transcript` is read inside a longer recording (LibriVox
     preambles, titles, end notes, or a full speech around an excerpt)."""
@@ -112,8 +132,15 @@ def locate_text(x: np.ndarray, transcript: str, pad_s: float = 0.25) -> tuple[fl
     b = [w.lower().replace("'", "") for w in words_of(transcript)]
     sm = SequenceMatcher(None, a, b, autojunk=False)
     pairs = [(blk.a + k, blk.b + k) for blk in sm.get_matching_blocks() for k in range(blk.size)]
-    if not pairs:
-        raise ValueError("transcript not found in recording")
+    coverage = letter_coverage(a, transcript)
+    if coverage < MIN_COVERAGE or not pairs:
+        heard = " ".join(a[:14]) + (" ..." if len(a) > 14 else "")
+        start = " ".join(words_of(transcript)[:8])
+        raise TextNotFound(
+            f"This recording does not match the selected text: about {coverage:.0%} of it was recognized "
+            f"(need {MIN_COVERAGE:.0%}). The recording is {len(x) / 16000:.0f} s long and "
+            f"the recognizer heard: \"{heard or '(no speech)'}\". Read the whole passage, start to "
+            f"finish; it begins \"{start} ...\" (the title is not part of it).")
 
     def dense(i, sign):
         ai, bj = pairs[i]

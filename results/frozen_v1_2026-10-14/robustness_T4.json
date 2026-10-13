@@ -1,0 +1,56 @@
+{
+ "clean": {
+  "labels": 24,
+  "matching_score": 0.3333333333333333,
+  "time_recall": 0.3333333333333333,
+  "time_precision": 0.10256410256410256,
+  "time_f1": 0.15686274509803919,
+  "onset_ms_median": 19.999999999999574,
+  "offset_ms_median": 45.000000000001705
+ },
+ "noise_20": {
+  "labels": 24,
+  "matching_score": 0.25,
+  "time_recall": 0.2916666666666667,
+  "time_precision": 0.0457516339869281,
+  "time_f1": 0.0790960451977401,
+  "onset_ms_median": 70.00000000000384,
+  "offset_ms_median": 20.000000000003126
+ },
+ "noise_10": {
+  "labels": 24,
+  "matching_score": 0.16666666666666666,
+  "time_recall": 0.16666666666666666,
+  "time_precision": 0.024390243902439025,
+  "time_f1": 0.0425531914893617,
+  "onset_ms_median": 75.00000000000284,
+  "offset_ms_median": 240.00000000000023
+ },
+ "mp3_64k": {
+  "labels": 24,
+  "matching_score": 0.3333333333333333,
+  "time_recall": 0.3333333333333333,
+  "time_precision": 0.10256410256410256,
+  "time_f1": 0.15686274509803919,
+  "onset_ms_median": 19.999999999999574,
+  "offset_ms_median": 45.000000000001705
+ },
+ "telephone_band": {
+  "labels": 24,
+  "matching_score": 0.2916666666666667,
+  "time_recall": 0.2916666666666667,
+  "time_precision": 0.08333333333333333,
+  "time_f1": 0.12962962962962962,
+  "onset_ms_median": 39.99999999999915,
+  "offset_ms_median": 60.000000000002274
+ },
+ "wrong_word": {
+  "labels": 24,
+  "matching_score": 0.3333333333333333,
+  "time_recall": 0.3333333333333333,
+  "time_precision": 0.10256410256410256,
+  "time_f1": 0.15686274509803919,
+  "onset_ms_median": 19.999999999999574,
+  "offset_ms_median": 45.000000000001705
+ }
+}

@@ -27,6 +27,8 @@ class Params:
     tau_high: float = 1.0
     tau_low: float = 0.5
     tau: dict = field(default_factory=dict)  # per flaw type tau_high (tau_low = tau/2); falls back to tau_high
+    relative_channels: bool = False  # v2: self-relative pace/monotone channels (False = v1)
+    stress_floor: bool = False       # v2: perceptible stress points only (False = v1)
     lam: dict = field(default_factory=lambda: {d: 20.0 for d in DIMENSIONS})
     sev_x: list = field(default_factory=lambda: [0.0, 1.0, 2.0, 4.0, 8.0])
     sev_y: list = field(default_factory=lambda: [1.0, 2.0, 3.0, 4.0, 5.0])
@@ -72,7 +74,7 @@ def hysteresis(d: np.ndarray, hi: float, lo: float, merge_gap: int = 1) -> list[
 
 
 def detect(x: dict, words: list[dict], env: Envelope, p: Params, types=None) -> list[dict]:
-    dev = deviations(x, env, p.margin, p.scale)
+    dev = deviations(x, env, p.margin, p.scale, relative=p.relative_channels, stress_floor=p.stress_floor)
     typed = by_type(dev)
     regions = []
     for typ in types or FLAW_TYPES:
@@ -104,7 +106,7 @@ def detect(x: dict, words: list[dict], env: Envelope, p: Params, types=None) -> 
 
 
 def _fmt(v: float, f: str) -> str:
-    return f"{v:.2f}" if UNITS[f] == "s" else f"{v:.1f}"
+    return f"{v:.2f}" if UNITS[f] in ("s", "x") else f"{v:.1f}"
 
 
 def explain(r: dict, x: dict, words: list[dict], env: Envelope) -> str:
@@ -114,18 +116,21 @@ def explain(r: dict, x: dict, words: list[dict], env: Envelope) -> str:
     refs = np.nanmean(env.ref_values[f][:, idx], axis=1)
     lo, hi = float(np.nanmin(refs)), float(np.nanmax(refs))
     k = NUMBER_WORDS.get(env.k, str(env.k))
-    unit = {"st": "semitones", "dB": "dB", "s": "s", "syll/s": "syllables/s"}[UNITS[f]]
+    unit = {"st": "semitones", "dB": "dB", "s": "s", "syll/s": "syllables/s",
+            "x": "x your own typical value"}[UNITS[f]]
     w0, w1 = words[r["w0"]], words[r["w1"]]
     span = f"Word {r['w0'] + 1}" if r["w0"] == r["w1"] else f"Words {r['w0'] + 1}-{r['w1'] + 1}"
     head = f"{span} ({r['start']:.1f}-{r['end']:.1f} s): "
     pl = "" if env.k == 1 else "s"
     rng = (f"the good rendition{pl} spanned {_fmt(lo, f)}-{_fmt(hi, f)}" if env.k > 1
            else f"the reference had {_fmt(lo, f)}")
+    if f == "pause" and hi < 0.05:  # "spanned 0.00-0.00" reads badly: say it in words
+        rng = "none of the good renditions paused there" if env.k > 1 else "the reference did not pause there"
     typ = r["type"]
     if typ == "pace":
         tip = (f"Slow down from '{w0['word']}' to '{w1['word']}'." if side > 0
                else f"Pick up the pace from '{w0['word']}' to '{w1['word']}'.")
-        what = "speaking rate"
+        what = "speaking rate" if f == "rate" else "speaking rate relative to your own pace"
     elif typ == "missing_pause":
         tip = f"Pause after '{w0['word']}'."
         what = f"pause after '{w0['word']}'"
@@ -135,14 +140,17 @@ def explain(r: dict, x: dict, words: list[dict], env: Envelope) -> str:
     elif typ == "monotone":
         peak = idx[int(np.nanargmax(np.nan_to_num(env.hi["pitch_range"][idx], nan=-1)))]
         tip = f"Lift pitch on '{words[peak]['word']}'."
-        what = "pitch range"
+        what = "pitch range" if f == "pitch_range" else "pitch range relative to your own range"
     elif typ == "missed_emphasis":
         tip = f"Stress '{w0['word']}'."
         what = "pitch peak over neighbours" if f == "prom_pitch" else "loudness peak over neighbours"
     else:
         tip = f"Keep your volume up through '{w1['word']}'."
         what = "loudness re your median"
-    return f"{head}{what} {_fmt(att, f)} {unit}; {rng}{'' if env.k == 1 else ' across ' + k}. {tip}"
+    across = "" if env.k == 1 or rng.startswith("none") else " across " + k
+    if rng.startswith("none"):
+        rng = rng.replace("none of the good renditions", f"none of the {k} good renditions")
+    return f"{head}{what} {_fmt(att, f)} {unit}; {rng}{across}. {tip}"
 
 
 def scores(regions: list[dict], words: list[dict], p: Params) -> dict:

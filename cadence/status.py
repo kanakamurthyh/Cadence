@@ -16,7 +16,7 @@ NEED_RATERS, NEED_LISTENERS = 3, 5
 def rankings() -> dict:
     out = {}
     for tid in TEXTS:
-        readers = sorted(p.stem for p in (REFS / tid).glob("lv*.json"))
+        readers = sorted(p.stem for p in (REFS / tid).glob("*.json") if p.stem != "selection")
         f = RANK / f"{tid}_ratings.csv"
         rows = list(csv.DictReader(f.open())) if f.exists() else []
         raters = sorted({r["rater"] for r in rows})
@@ -32,8 +32,14 @@ def rankings() -> dict:
 def ladders() -> dict:
     sys.argv = ["x"]
     m = runpy.run_path(str(ROOT / "scripts" / "build_ladders.py"), run_name="lib")
+    from .data.texts import MIN_GOOD
     out = {}
     for tid in TEXTS:
+        sel = json.loads((REFS / tid / "selection.json").read_text())
+        if len(sel["good"]) < MIN_GOOD:
+            out[tid] = {"eligible": False, "consistent": True, "manifest_matches_plan": True,
+                        "note": f"{len(sel['good'])} renditions < {MIN_GOOD}: no ladders until teammate takes are added"}
+            continue
         plan = m["plan"](tid)
         stale = missing = 0
         for c in plan:

@@ -1,0 +1,32 @@
+{
+ "good": [
+  "lv8387_07_laurie_anne_walden",
+  "lv8387_10_maria_kasper",
+  "lv8387_01_ann_boulais",
+  "lv8387_11_phil_chenevert",
+  "lv390_01_john_greenman",
+  "lv1293_01_jim_cadwell"
+ ],
+ "ranking": [
+  "lv8387_07_laurie_anne_walden",
+  "lv8387_10_maria_kasper",
+  "lv8387_01_ann_boulais",
+  "lv8387_11_phil_chenevert",
+  "lv390_01_john_greenman",
+  "lv1293_01_jim_cadwell",
+  "lv8387_03_david_lawrence",
+  "lv8387_14_triciag",
+  "lv8387_15_winston_tharp",
+  "lv8387_08_lucretia_b",
+  "lv8387_13_sue_anderson",
+  "lv8387_09_maryann",
+  "lv1157_01_mark_f_smith",
+  "lv8387_04_ernst_pattynama",
+  "lv8387_06_julia_niedermaier",
+  "lv8387_05_frances_brown",
+  "lv389_01_shurtagal",
+  "lv8387_02_drew_johnson",
+  "lv8387_12_ray_kasper_1938_2017"
+ ],
+ "method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking"
+}

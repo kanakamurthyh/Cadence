@@ -94,6 +94,13 @@ def check() -> dict:
         for f in (ANN / a).glob("*.txt"):
             if f.stem not in known:
                 problems.append(f"annotation without a take: {_rel(f)}")
+    # a take may be a reference candidate (data/raw/<T>/team_*) or a test take, never both
+    import hashlib
+    ref_hashes = {hashlib.sha1(p.read_bytes()).hexdigest(): p for p in (ROOT / "data" / "raw").glob("*/team_*")}
+    for t in tk:
+        h = hashlib.sha1(t["path"].read_bytes()).hexdigest()
+        if h in ref_hashes:
+            problems.append(f"{_rel(t['path'])} is also a reference candidate ({_rel(ref_hashes[h])}): leakage")
     per_text = {tid: sum(t["text_id"] == tid for t in tk) for tid in TEXTS}
     return {"takes": len(tk), "per_text": per_text, "annotators": anns, "problems": problems}
 

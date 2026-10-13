@@ -91,3 +91,40 @@ def test_injector_time_map():
     assert c.tmap(0.5) == pytest.approx(0.5)
     assert c.tmap(2.0) == pytest.approx(1.5)
     assert c.tmap(3.5) == pytest.approx(3.5 - 0.5 + 0.7)
+
+
+def _reader(tempo, seed, w=30):
+    r = np.random.default_rng(seed)
+    f = {k: np.zeros(w) for k in E.ENV_FEATURES + ["pitch"] if k not in E.REL_FEATURES}
+    f["rate"] = tempo * (1 + r.normal(0, 0.03, w))
+    f["pause"] = np.zeros(w)
+    f["pitch_range"] = 6 + r.normal(0, 0.3, w)
+    f["loud"] = r.normal(0, 0.3, w)
+    f["prom_pitch"] = r.normal(-1, 0.2, w)
+    f["prom_loud"] = r.normal(-1, 0.2, w)
+    return f
+
+
+def test_v2_relative_pace_catches_local_rush_v1_misses():
+    """Good readers differ in overall tempo (3 to 5.4 syll/s); a slow reader rushing 6 words
+    stays inside the absolute envelope but leaves the self-relative one."""
+    refs = [_reader(t, s) for s, t in enumerate([3.0, 3.6, 4.2, 4.8, 5.4])]
+    att = _reader(3.0, 99)
+    att["rate"][10:16] *= 1.6  # local rush to 4.8 syll/s: inside the absolute range
+    words = [{"word": f"w{i}", "start": i * 0.4, "end": i * 0.4 + 0.35} for i in range(30)]
+    env = E.build(refs)
+    base = dict(margin={f: 0.0 for f in E.ENV_FEATURES}, scale={f: 0.3 for f in E.ENV_FEATURES},
+                tau={t: 1.0 for t in E.FLAW_TYPES})
+    v1 = detect(att, words, env, Params(**base))
+    v2 = detect(att, words, env, Params(**base, relative_channels=True, stress_floor=True))
+    assert not [r for r in v1 if r["type"] == "pace"]
+    hit = [r for r in v2 if r["type"] == "pace"]
+    assert hit and hit[0]["w0"] >= 9 and hit[0]["w1"] <= 16
+
+
+def test_stress_floor_ignores_imperceptible_peaks():
+    refs = [_reader(4, s) for s in range(4)]
+    for r in refs:
+        r["prom_loud"][7] = 0.2  # every reader "peaks" by 0.2 dB: nobody hears that
+    env = E.build(refs)
+    assert env.stress(False)[1][7] and not env.stress(True)[1][7]

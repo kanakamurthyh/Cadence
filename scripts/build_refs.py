@@ -18,7 +18,7 @@ import numpy as np
 os.environ.setdefault("OMP_NUM_THREADS", "2")
 
 from cadence import audio  # noqa: E402
-from cadence.data.texts import TEXTS  # noqa: E402
+from cadence.data.texts import MIN_GOOD, TEXTS  # noqa: E402
 from cadence.pipeline import REFS, measure, save_record  # noqa: E402
 
 GOOD_K = 6
@@ -37,7 +37,9 @@ def _one(args):
         conf = float(np.mean([w["score"] for w in rec["words"]]))
         save_record(rec, out, {"reader": src["reader"], "url": src["url"], "book_id": src["book_id"],
                                "align_conf": conf, "duration": len(rec["x"]) / audio.SR,
-                               "licence": "Public domain (LibriVox)"})
+                               "source_file": src["mp3"], "offset_in_source_s": rec["offset"],
+                               "licence": src.get("licence", "Public domain (LibriVox)"),
+                               "provenance": src.get("provenance", "")})
         return src["id"], f"ok conf={conf:.3f}"
     except Exception as e:  # noqa: BLE001
         return src["id"], f"FAILED {e!r}"
@@ -47,13 +49,17 @@ def select(tid: str) -> dict:
     srcs = Path("data/raw") / tid / "sources.json"
     src = {r["id"]: r for r in json.loads(srcs.read_text())} if srcs.exists() else {}
     recs = []
-    for p in sorted((REFS / tid).glob("lv*.json")):
+    for p in sorted(q for q in (REFS / tid).glob("*.json") if q.stem != "selection"):
         d = json.loads(p.read_text())
         m = d["meta"]
-        if p.stem in src and m.get("reader") != src[p.stem]["reader"]:  # backfill metadata
+        if p.stem in src:  # backfill provenance metadata (never touches words or features)
             s = src[p.stem]
-            m.update(reader=s["reader"], url=s["url"], book_id=s["book_id"])
-            p.write_text(json.dumps(d, sort_keys=True))
+            new = {"reader": s["reader"], "url": s["url"], "book_id": s["book_id"],
+                   "licence": s.get("licence", m.get("licence")), "provenance": s.get("provenance", ""),
+                   "source_file": s["mp3"]}
+            if any(m.get(k) != v for k, v in new.items()):
+                m.update(new)
+                p.write_text(json.dumps(d, sort_keys=True))
         recs.append((p.stem, m))
     human = Path("data/rankings") / f"{tid}.csv"
     if human.exists():  # rows: id, rank_by_rater1, rank_by_rater2, rank_by_rater3
@@ -65,6 +71,8 @@ def select(tid: str) -> dict:
         order = [i for i, m in sorted(recs, key=lambda r: -r[1]["align_conf"])]
         method = "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking"
     sel = {"good": order[:GOOD_K], "ranking": order, "method": method}
+    if len(sel["good"]) < MIN_GOOD:
+        sel["status"] = f"insufficient renditions: {len(sel['good'])} < {MIN_GOOD}; excluded from ladders and evaluation"
     (REFS / tid / "selection.json").write_text(json.dumps(sel, indent=1))
     return sel
 

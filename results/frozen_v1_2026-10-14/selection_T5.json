@@ -1,0 +1,12 @@
+{
+ "good": [
+  "lv_snf064_04_lcw",
+  "fdr_original_1941"
+ ],
+ "ranking": [
+  "lv_snf064_04_lcw",
+  "fdr_original_1941"
+ ],
+ "method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking",
+ "status": "insufficient renditions: 2 < 4; excluded from ladders and evaluation"
+}

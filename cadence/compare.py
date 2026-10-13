@@ -19,8 +19,8 @@ def _num(v):
 
 def rows(o: dict) -> dict:
     out = {}
-    for t in ("T2", "T3"):
-        for name, key in ((B2, "B2"), (B1, "B1")):
+    for t in [t for t in o["methods"][B2] if t != "T1"]:
+        for name, key in ((B2, "B2"), (B1, "B1"), ("B0 generic norms", "B0")):
             r = o["methods"][name][t]
             out[f"{key} Matching Score {t}"] = (r["ladders"]["matching_score"], _pct)
             out[f"{key} pace {t}"] = (r["by_type"]["pace"], _pct)
@@ -31,7 +31,7 @@ def rows(o: dict) -> dict:
     out["Severity rho vs listeners (T1)"] = (sv.get("spearman_system_vs_perceived"), _num)
     out["Severity scale"] = (o["params"]["K=all"].get("sev_scale"), str)
     out["Good set method T2"] = (o["natural_spectrum"]["T2"]["ranking_method"], str)
-    for t in ("T2", "T3"):
+    for t in o["natural_spectrum"]:
         out[f"Natural spectrum Spearman {t}"] = (o["natural_spectrum"][t]["spearman_vs_ranking"], _num)
     nf = o.get("natural_flaws", {})
     for a, r in nf.get("system_vs_annotator", {}).items():

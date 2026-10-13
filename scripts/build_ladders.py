@@ -24,7 +24,7 @@ from cadence.pipeline import REFS, ROOT, _r, good_set, load_record, load_refs, m
 
 LADDERS = ROOT / "data" / "ladders"
 SEED = 20261013
-COMPOUND = {"T1": 2, "T2": 4, "T3": 4}
+COMPOUND = {"T1": 2, "T2": 4, "T3": 4}  # other texts: 4
 SINGLE_TYPES = ["pace_rushed", "pace_dragging", "missing_pause", "misplaced_pause",
                 "monotone", "missed_emphasis", "volume_fade"]
 
@@ -38,7 +38,8 @@ def plan(tid: str) -> list[dict]:
     env = build([r["feats"] for r in others])
     rng = np.random.default_rng(SEED + int(tid[1:]))
     spans = inject.choose_spans(ref["words"], ref["feats"], env.stress_pitch | env.stress_loud, rng,
-                                others_pause=np.stack([r["feats"]["pause"] for r in others]))
+                                others_pause=np.stack([r["feats"]["pause"] for r in others]),
+                                rule=TEXTS[tid].get("span_rule", 1))
     clips = []
     for g in good:
         clips.append({"id": f"{tid}_null_{g}", "source": g, "flaws": [], "kind": "null"})
@@ -53,7 +54,7 @@ def plan(tid: str) -> list[dict]:
     pool = [(t, s) for t in SINGLE_TYPES for s in spans[t]]
     made = 0
     for _ in range(200):
-        if made >= COMPOUND[tid]:
+        if made >= COMPOUND.get(tid, 4):
             break
         i, j = rng.choice(len(pool), 2, replace=False)
         (t1, s1), (t2, s2) = pool[i], pool[j]
@@ -106,7 +107,12 @@ if __name__ == "__main__":
     ap.add_argument("--workers", type=int, default=5)
     a = ap.parse_args()
     jobs = []
-    for tid in a.texts:
+    from cadence.data.texts import MIN_GOOD
+    for tid in list(a.texts):
+        if len(good_set(tid)) < MIN_GOOD:
+            print(tid, f"skipped: fewer than {MIN_GOOD} good renditions (add teammate takes)", flush=True)
+            a.texts.remove(tid)
+            continue
         (LADDERS / tid).mkdir(parents=True, exist_ok=True)
         clips = plan(tid)
         jobs += [(tid, c) for c in clips]

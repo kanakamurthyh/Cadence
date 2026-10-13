@@ -22,6 +22,10 @@ def main(argv=None):
     a.add_argument("--text", default="T2")
     a.add_argument("--k", type=int)
     a.add_argument("--out")
+    sub.add_parser("labels", help="export machine-readable labels and validate every synthetic clip")
+    sub.add_parser("inventory", help="dataset inventory: every recording, source, licence, file")
+    dm = sub.add_parser("demo", help="pick the demo case from computed results (data/demo/demo_<T>.json)")
+    dm.add_argument("--text", default="T3")
     sub.add_parser("status", help="check which human-data steps are done and consistent")
     sub.add_parser("natural", help="check teammate takes + annotations, evaluate natural flaws")
     c = sub.add_parser("compare", help="compare current results with a frozen baseline")
@@ -49,6 +53,15 @@ def main(argv=None):
         rep, _ = analyze(args.audio, args.text, k=args.k)
         s = json.dumps(rep, indent=1, sort_keys=True)
         Path(args.out).write_text(s) if args.out else print(s)
+    if args.cmd == "labels":
+        from .labels import main as labels
+        labels()
+    if args.cmd == "inventory":
+        from .inventory import main as inventory
+        inventory()
+    if args.cmd == "demo":
+        from .demo import choose
+        choose(args.text)
     if args.cmd == "status":
         from .status import main as status
         status()

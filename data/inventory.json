@@ -1,0 +1,186 @@
+{
+ "texts": {
+  "T1": {
+   "title": "Sea Fever",
+   "role": "calibration",
+   "recordings": 24,
+   "speakers": 24,
+   "good_set": [
+    "lv1452_11_jennifer_rowan",
+    "lv1452_13_katie_gibboney",
+    "lv1452_12_jennamay",
+    "lv1452_24_ted_doolittle",
+    "lv1452_01_alan_davis_drake_1945_20",
+    "lv1452_20_robert_scott"
+   ],
+   "good_set_method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking",
+   "eligible_for_envelope": true,
+   "align_conf_median": 0.962,
+   "align_conf_min": 0.912,
+   "synthetic_clips": {
+    "null": 6,
+    "ladder": 60,
+    "compound": 2
+   }
+  },
+  "T2": {
+   "title": "Stopping by Woods on a Snowy Evening",
+   "role": "test",
+   "recordings": 23,
+   "speakers": 23,
+   "good_set": [
+    "lv13668_07_graham_scott",
+    "lv13668_02_christine_rojas",
+    "lv13668_11_larry_wilson",
+    "lv13668_01_bruce_kachuk",
+    "lv13668_12_maria_kasper",
+    "lv13668_08_hypatia"
+   ],
+   "good_set_method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking",
+   "eligible_for_envelope": true,
+   "align_conf_median": 0.976,
+   "align_conf_min": 0.958,
+   "synthetic_clips": {
+    "null": 6,
+    "ladder": 60,
+    "compound": 4
+   }
+  },
+  "T3": {
+   "title": "Gettysburg Address (closing paragraph)",
+   "role": "test-oratory",
+   "recordings": 19,
+   "speakers": 19,
+   "good_set": [
+    "lv8387_07_laurie_anne_walden",
+    "lv8387_10_maria_kasper",
+    "lv8387_01_ann_boulais",
+    "lv8387_11_phil_chenevert",
+    "lv390_01_john_greenman",
+    "lv1293_01_jim_cadwell"
+   ],
+   "good_set_method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking",
+   "eligible_for_envelope": true,
+   "align_conf_median": 0.977,
+   "align_conf_min": 0.946,
+   "synthetic_clips": {
+    "null": 6,
+    "ladder": 60,
+    "compound": 4
+   }
+  },
+  "T4": {
+   "title": "Gettysburg Address (opening paragraph)",
+   "role": "test-oratory",
+   "recordings": 19,
+   "speakers": 19,
+   "good_set": [
+    "lv8387_06_julia_niedermaier",
+    "lv390_01_john_greenman",
+    "lv8387_10_maria_kasper",
+    "lv8387_07_laurie_anne_walden",
+    "lv8387_15_winston_tharp",
+    "lv1293_01_jim_cadwell"
+   ],
+   "good_set_method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking",
+   "eligible_for_envelope": true,
+   "align_conf_median": 0.973,
+   "align_conf_min": 0.959,
+   "synthetic_clips": {
+    "null": 6,
+    "ladder": 60,
+    "compound": 4
+   }
+  },
+  "T5": {
+   "title": "Day of Infamy address (opening)",
+   "role": "test-oratory",
+   "recordings": 2,
+   "speakers": 2,
+   "good_set": [
+    "lv_snf064_04_lcw",
+    "fdr_original_1941"
+   ],
+   "good_set_method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking",
+   "eligible_for_envelope": false,
+   "align_conf_median": 0.906,
+   "align_conf_min": 0.84,
+   "synthetic_clips": {}
+  },
+  "T6": {
+   "title": "If- (first two stanzas)",
+   "role": "test-final",
+   "recordings": 15,
+   "speakers": 15,
+   "good_set": [
+    "lv188_02_catharine_eastman",
+    "lv188_04_fox_in_the_stars",
+    "lv188_03_chip",
+    "lv188_07_kara_shallenberg_1969_20",
+    "lv188_12_norah_piehl",
+    "lv188_13_patricia_oakley"
+   ],
+   "good_set_method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking",
+   "eligible_for_envelope": true,
+   "align_conf_median": 0.976,
+   "align_conf_min": 0.959,
+   "synthetic_clips": {
+    "null": 6,
+    "ladder": 60,
+    "compound": 4
+   }
+  }
+ },
+ "speaker_overlap": {
+  "T1-T3": [
+   "mark f.",
+   "shurtagal"
+  ],
+  "T1-T4": [
+   "mark f.",
+   "shurtagal"
+  ],
+  "T2-T3": [
+   "david lawrence",
+   "maria kasper",
+   "winston tharp"
+  ],
+  "T2-T4": [
+   "david lawrence",
+   "maria kasper",
+   "winston tharp"
+  ],
+  "T3-T4": [
+   "ann boulais",
+   "david lawrence",
+   "drew johnson",
+   "ernst pattynama",
+   "frances brown",
+   "jim cadwell",
+   "john greenman",
+   "julia niedermaier",
+   "laurie anne",
+   "lucretia b.",
+   "maria kasper",
+   "mark f.",
+   "maryann",
+   "phil chenevert",
+   "ray kasper",
+   "shurtagal",
+   "sue anderson",
+   "triciag",
+   "winston tharp"
+  ]
+ },
+ "calibration_speakers_in_test_texts": {
+  "T2": [],
+  "T3": [],
+  "T4": [],
+  "T5": [],
+  "T6": []
+ },
+ "totals": {
+  "recordings": 102,
+  "synthetic_clips": 348
+ }
+}

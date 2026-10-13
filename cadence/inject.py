@@ -206,8 +206,12 @@ def null_edit(x: np.ndarray, words: list[dict]) -> np.ndarray:
 
 # -- span selection --------------------------------------------------------
 
-def choose_spans(words, feats, stress, rng, n=2, others_pause=None) -> dict[str, list[tuple[int, int]]]:
+def choose_spans(words, feats, stress, rng, n=2, others_pause=None, rule: int = 1) -> dict[str, list[tuple[int, int]]]:
     """Random word spans per flaw type from a fixed-seed generator.
+
+    rule 1 (T1-T3, frozen): as first released. rule 2 (newer texts): a misplaced pause
+    is inserted only between two words each >= 0.15 s long, because gapless boundaries
+    next to very short words are where the source alignment is least reliable.
 
     `others_pause` (K, W) holds the other good renditions' pauses. A missing pause is
     injected only where every good reader pauses, and a misplaced pause only where
@@ -252,6 +256,8 @@ def choose_spans(words, feats, stress, rng, n=2, others_pause=None) -> dict[str,
         "volume_fade": pick(ph, n),
         "missing_pause": pick([(i, i + 1) for i in inner if pause[i] >= 0.3 and op_min[i] >= 0.15], n),
         "misplaced_pause": pick([(i, i) for i in inner if pause[i] == 0 and op_max[i] == 0 and pause[i - 1] == 0
+                                 and (rule < 2 or min(words[i]["end"] - words[i]["start"],
+                                                      words[i + 1]["end"] - words[i + 1]["start"]) >= 0.15)
                                  and pause[i + 1] == 0], n),
         "missed_emphasis": pick(stress_c, n),  # drawn last: earlier spans do not depend on it
     }

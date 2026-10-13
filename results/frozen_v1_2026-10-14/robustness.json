@@ -43,5 +43,14 @@
   "time_f1": 0.5882352941176471,
   "onset_ms_median": 14.999999999998792,
   "offset_ms_median": 35.00000000000014
+ },
+ "telephone_band": {
+  "labels": 24,
+  "matching_score": 0.2916666666666667,
+  "time_recall": 0.2916666666666667,
+  "time_precision": 1.0,
+  "time_f1": 0.45161290322580644,
+  "onset_ms_median": 19.999999999999574,
+  "offset_ms_median": 20.00000000000135
  }
 }

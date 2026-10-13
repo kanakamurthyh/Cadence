@@ -5,7 +5,8 @@ the T1 ladders are built from, and listening responses are tied to that ladder v
 
 | Step | Who | Output | Verify with |
 |---|---|---|---|
-| 1. Rank readers | 3 raters × 3 texts (66 readings) | `data/rankings/T1.csv`, `T2.csv`, `T3.csv` | `cadence status` |
+| 0. Envelope takes for T5 | ≥ 2 teammates, ideally 4, 1 rehearsed take each | `data/raw/T5/team_<name>_take1.wav` plus a consent form | `cadence fetch && cadence refs` |
+| 1. Rank readers | 3 raters × 6 texts, 102 readings: T1 24, T2 23, T3 19, T4 19, T5 2 + team, T6 15. Most important: **T1** (sets calibration), then **T4/T3** (the speeches) | `data/rankings/T1.csv` … `T6.csv` | `cadence status` |
 | 2. Rebuild refs and ladders | You | `selection.json` method = human ranking; ladders re-rendered | `cadence status` |
 | 3. Listening test | 5 listeners × 36 trials | `data/listening/responses.csv` | `cadence status` |
 | 4. Teammate takes and annotations | Readers; 2 annotators | `data/takes/…`, `data/annotations/…` | `cadence natural` |
@@ -14,6 +15,23 @@ the T1 ladders are built from, and listening responses are tied to that ladder v
 Start the human-study pages with `uv run cadence human`. They open at `http://localhost:7861`
 on this Mac and at `http://<this Mac's LAN IP>:7861` for teammates on the same network.
 
+## 0. Envelope takes for T5 (FDR "Day of Infamy" opening)
+
+T5 has only two public-domain renditions: FDR's original and one LibriVox reading. An envelope
+needs at least 4, so T5 has no ladders or results until teammates add theirs.
+
+1. Each teammate signs `data/consent/CONSENT_FORM.md` and saves it as `data/consent/<name>.pdf`.
+2. Rehearse the passage, then record **one best-effort take**: a strong, deliberate delivery,
+   not a flawed one.
+   - Print the passage with `uv run python -c "from cadence.data.texts import TEXTS; print(TEXTS['T5']['text'])"`.
+   - Use a quiet room, 30 cm from the microphone, and leave 1–2 s of silence at both ends.
+3. Save the take as `data/raw/T5/team_<name>_take1.wav` (m4a and mp3 also work).
+4. Run `uv run cadence fetch && uv run cadence refs`. The takes join T5's ranking. Once T5 has
+   ≥ 4 good renditions, `uv run cadence ladders` builds its ladders.
+
+These takes are reference candidates. They must not also be submitted as natural-flaw takes
+(step 4); `cadence natural` rejects identical files.
+
 ## 1. Reader ranking (3 raters)
 
 1. Open the **Rank readers** tab, type your name, and pick **T1** in the Text dropdown.
@@ -21,7 +39,9 @@ on this Mac and at `http://<this Mac's LAN IP>:7861` for teammates on the same n
    - Judge **delivery only**: pace, pauses, pitch variety, emphasis, volume, fluency.
    - Ignore accent, microphone quality and voice type.
 3. Every slider starts at 5, and an untouched slider is saved as 5. Move every slider.
-4. Click **Save my scores**, then repeat for **T2** and **T3**.
+4. Click **Save my scores**, then repeat for **T2**, **T3**, **T4** and **T5**.
+   - T3 and T4 are two passages of the same 19 Gettysburg readings; rate each passage on its own.
+   - For T5, rate after step 0, so the teammate takes are included.
 
 Rater rules:
 - Rate alone, without discussing scores with the other raters.

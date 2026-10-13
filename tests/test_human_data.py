@@ -29,3 +29,12 @@ def test_ladder_cache_guard():
     assert not same({"source": "b", "flaws": [["monotone", 3, 10, 14]]}, c)  # new good set
     assert not same({"source": "a", "flaws": [["monotone", 3, 11, 15]]}, c)  # new span
     assert same({"source": "a", "labels": [{"w0": 10, "severity": 3}]}, c)  # legacy cache
+
+
+def test_expected_length_change_models_crossfades():
+    from cadence.labels import _expected_delta
+    words = [{"start": 0.0, "end": 1.0}, {"start": 1.5, "end": 2.0}, {"start": 2.0, "end": 3.0}]
+    assert _expected_delta(["misplaced_pause", 5, 0, 0], words) == pytest.approx(2.0 - 0.02)
+    assert _expected_delta(["missing_pause", 5, 0, 1], words) == pytest.approx(-(0.5 - 0.01) - 0.01)
+    assert _expected_delta(["pace_rushed", 5, 1, 2], words) == pytest.approx((0.55 - 1) * 1.5)
+    assert _expected_delta(["monotone", 5, 0, 2], words) == 0.0

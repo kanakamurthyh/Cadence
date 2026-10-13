@@ -8,6 +8,8 @@ from pathlib import Path
 
 import requests
 
+# Wikimedia requires a descriptive User-Agent (https://meta.wikimedia.org/wiki/User-Agent_policy)
+HEADERS = {"User-Agent": "Cadence-research-dataset/0.2 (+https://commons.wikimedia.org/wiki/Commons:Reusing_content_outside_Wikimedia; speech benchmark, public-domain sources)"}
 API = "https://librivox.org/api/feed/audiobooks/?id={id}&format=json&extended=1"
 
 
@@ -35,7 +37,7 @@ def reader_id(sec: dict) -> str:
 def _download(url: str, path: Path, tries: int = 4) -> bool:
     for i in range(tries):
         try:
-            r = requests.get(url, timeout=120)
+            r = requests.get(url, timeout=120, headers=HEADERS)
             r.raise_for_status()
             path.write_bytes(r.content)
             return True
