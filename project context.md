@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 9: pushed session-8 project state)
+> Last updated: 2026-10-14 (session 10: scoring-push plan; dataset rebuild running)
 
 ## 1. What this project is
 
@@ -287,6 +287,7 @@ memory pressure.
 - [ ] Improve pace and monotone detection: region-level rate, a stricter good set, WavLM rhythm.
 - [ ] The demo clip's rushed pace is not detected; adjust the 0:50 demo segment or fix pace.
 - [ ] Publish the dataset link separately; generated recordings and human-study assets are not in Git.
+- [ ] W0–W6 of the scoring-push spec (rebuild, dataset v3, Indian texts, detector v3, gradient figures, HF publish, demo).
 - [ ] YouTube video (3–10 min, opening with the section 9 script) and the Devpost page (Track C, all teammates).
 
 ## 8. Change log
@@ -428,3 +429,12 @@ memory pressure.
 - **2026-10-14 (session 9): published the current project state to GitHub.** Pushed the
   detector-v2 implementation and evaluation, T6 untouched-test results, T4 demo, licensing and
   label metadata, and refreshed project documentation to `main`.
+- **2026-10-14 (session 10): scoring-push plan for the final submission.**
+  - Mapped Cadence against the Track C weighted criteria; plan in
+    `docs/superpowers/specs/2026-10-14-track-c-scoring-push-design.md` (W0–W6).
+  - Root cause of 0% missed-emphasis recall: ladders target v1 stress points, the v2 detector
+    reads only perceptible ones. Fix chosen: dataset v3 rule (targets = perceptible consensus
+    stress points). Pace/monotone: phrase-level channels (detector v3, T1-fitted).
+  - This checkout had no audio; regenerating fetch → refs → ladders (nohup, 3 workers,
+    `logs/regen_2026-10-14.log`). Indian-speaker data sources under deep research
+    (`research_notes/`, `reports/`). Hugging Face login done for dataset publishing.
