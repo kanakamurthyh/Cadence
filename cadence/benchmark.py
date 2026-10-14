@@ -10,12 +10,16 @@ from .metrics import spearman
 from .pipeline import PARAMS, ROOT, _r
 
 RESULTS = ROOT / "results"
-MAIN = E.Config()
-STATUS_NOTE = ("**Detector v2** (2026-10-14: self-relative pace/monotone channels, perceptible stress points). "
-               "Thresholds fitted on T1 only. The v2 changes were partly motivated by inspecting T3/T4, so "
-               "**T2-T4 are development feedback**; **T6 is the untouched final test** (added after v2 was "
-               "frozen, evaluated once). T3 and T4 are two passages read by the same 19 readers, so they are "
-               "not independent. The frozen v1 results are in results/frozen_v1_2026-10-14/.")
+MAIN = E.Config(phrase=True)
+STATUS_NOTE = (
+    "**Detector v3 candidate vs v2** (dataset v3: emphasis targets at perceptible stress points). "
+    "Thresholds fitted on T1 only; never retuned on T2/T3. "
+    "T2–T6 are development texts (T6 was used once for v2, so it is no longer untouched). "
+    "T7 (Speech Accent Archive, Indian L1 speakers) and T8 (Tagore) added after detector v3 was "
+    "designed and evaluated once; frozen v1 results in results/frozen_v1_2026-10-14/, "
+    "frozen v2 results in results/frozen_v2_2026-10-14/. "
+    "An automatic, pre-registered ship rule chooses between detector v3 (phrase channels) and v2."
+)
 METHODS = {"B0 generic norms": E.Config(method="B0"), "B1 single reference (K=1)": E.Config(k=1),
            "B2 envelope (K=all), ours": MAIN}
 ABLATIONS = {
@@ -25,7 +29,10 @@ ABLATIONS = {
     "K=1": E.Config(k=1), "K=2": E.Config(k=2), "K=4": E.Config(k=4), "K=all": MAIN,
     "norm off": E.Config(norm="off"), "norm z-score (v1)": E.Config(norm="zscore"),
     "no null-edit margin": E.Config(margin=False),
+    "v2 detector (no phrase channels)": E.Config(),
 }
+
+
 def ms_at_fa(pts: list[dict], budget: float):
     """Best Matching Score among sweep points with false alarms/min <= budget (step, no extrapolation)."""
     ok = [p["matching_score"] for p in pts if p["fa_per_min"] <= budget + 1e-9]
@@ -47,6 +54,65 @@ def _f(v, pct=False, nd=2):
     return f"{100 * v:.0f}%" if pct else f"{v:.{nd}f}"
 
 
+def ship_decision(v3: dict, v2: dict, fa_cap: float = 2.0) -> dict:
+    """Decide whether to ship detector v3 or fall back to v2.
+
+    Args:
+        v3: {text_id: E.run() output} for the v3 detector (phrase=True).
+        v2: {text_id: E.run() output} for the v2 detector (phrase=False).
+             Must include "T1"; held-out texts are all keys other than "T1".
+        fa_cap: maximum allowed FA/min on good pairs for held-out texts.
+
+    Rule: ship v3 iff
+      (1) v3 matching score > v2 on T1,
+      (2) v3 matching score > v2 on >= 2 held-out texts, AND
+      (3) on every held-out text where v2 FA/min <= fa_cap, v3 FA/min <= fa_cap.
+
+    Returns:
+        {"ship": "v3"|"v2", "t1": {...}, "wins": [...], "losses": [...],
+         "fa_violations": [...], "reason": str}
+    """
+    t1_v3 = v3["T1"]["ladders"]["matching_score"]
+    t1_v2 = v2["T1"]["ladders"]["matching_score"]
+    t1_wins = t1_v3 > t1_v2
+
+    held_out = [t for t in v3 if t != "T1"]
+    wins = [t for t in held_out if v3[t]["ladders"]["matching_score"] > v2[t]["ladders"]["matching_score"]]
+    losses = [t for t in held_out if t not in wins]
+
+    # FA cap violated on a held-out text where v2 is within the cap
+    fa_violations = [
+        t for t in held_out
+        if v2[t]["fa_per_min_good_pairs"] <= fa_cap and v3[t]["fa_per_min_good_pairs"] > fa_cap
+    ]
+
+    if t1_wins and len(wins) >= 2 and not fa_violations:
+        ship = "v3"
+        reason = (
+            f"v3 beats v2 on T1 (MS {t1_v3:.3f} vs {t1_v2:.3f}) "
+            f"and on {len(wins)} held-out text(s) with no FA cap violations"
+        )
+    else:
+        ship = "v2"
+        parts = []
+        if not t1_wins:
+            parts.append(f"v3 does not beat v2 on T1 (MS {t1_v3:.3f} vs {t1_v2:.3f})")
+        if len(wins) < 2:
+            parts.append(f"v3 beats v2 on only {len(wins)} held-out text(s) (need >= 2)")
+        if fa_violations:
+            parts.append(f"FA cap exceeded on {fa_violations}")
+        reason = "; ".join(parts) if parts else "unknown"
+
+    return {
+        "ship": ship,
+        "t1": {"v3_ms": t1_v3, "v2_ms": t1_v2, "v3_wins": t1_wins},
+        "wins": wins,
+        "losses": losses,
+        "fa_violations": fa_violations,
+        "reason": reason,
+    }
+
+
 def main(ablations: bool = True) -> dict:
     RESULTS.mkdir(exist_ok=True)
     out = {"calibration_text": "T1", "methods": {}, "ablations": {}, "sweep": {}, "params": {}}
@@ -56,15 +122,41 @@ def main(ablations: bool = True) -> dict:
             print("calibrating", name, flush=True)
             params[cfg] = E.calibrate(cfg, full=(cfg == MAIN))
             out["params"][cfg.name] = params[cfg].__dict__
-    params[MAIN].save(PARAMS)
-    b1 = params[E.Config(k=1)]
-    b1.lam = dict(params[MAIN].lam)  # same rubric scale as B2, so fallback scores are comparable
-    b1.save(PARAMS.with_name("params_B1.json"))  # single-reference fallback
+    # params[MAIN].save(PARAMS) moved to after ship decision (saves the winner)
     for name, cfg in METHODS.items():
         out["methods"][name] = {t: E.run(cfg, params[cfg], t) for t in ["T1", *TEST]}
     if ablations:
+        # Run ablations on T1 as well (cheap: reuse calibrated params; needed for ship_decision)
         for name, cfg in ABLATIONS.items():
-            out["ablations"][name] = {t: E.run(cfg, params[cfg], t) for t in TEST}
+            out["ablations"][name] = {t: E.run(cfg, params[cfg], t) for t in ["T1", *TEST]}
+
+    # -- Ship decision: v3 (MAIN, phrase=True) vs v2 (phrase=False) ----------
+    v2_cfg = E.Config()
+    v3_results = out["methods"]["B2 envelope (K=all), ours"]
+    if ablations:
+        v2_results = out["ablations"]["v2 detector (no phrase channels)"]
+    else:
+        if v2_cfg not in params:
+            params[v2_cfg] = E.calibrate(v2_cfg)
+        v2_results = {t: E.run(v2_cfg, params[v2_cfg], t) for t in ["T1", *TEST]}
+    decision = ship_decision(v3_results, v2_results)
+    out["ship_decision"] = decision
+
+    # Save the WINNER's params; b1.lam from the same winner
+    winner_cfg = MAIN if decision["ship"] == "v3" else v2_cfg
+    params[winner_cfg].save(PARAMS)
+    b1 = params[E.Config(k=1)]
+    b1.lam = dict(params[winner_cfg].lam)  # same rubric scale as B2, so fallback scores are comparable
+    b1.save(PARAMS.with_name("params_B1.json"))  # single-reference fallback
+
+    # If v2 ships: update headline table to show v2; stash v3 under ablations
+    if decision["ship"] == "v2":
+        v3_stash = {t: v3_results[t] for t in TEST if t in v3_results}
+        out["ablations"]["v3 detector (phrase channels)"] = v3_stash
+        out["methods"]["B2 envelope (K=all), ours"] = {
+            t: E.run(v2_cfg, params[v2_cfg], t) for t in ["T1", *TEST]
+        }
+
     for t in TEST:
         out["sweep"][t] = {n: E.sweep(c, params[c], t) for n, c in
                            [("B1 single reference", E.Config(k=1)), ("B2 envelope", MAIN)]}
@@ -143,6 +235,17 @@ def markdown(o: dict) -> str:
     for name, per in o["methods"].items():
         L.append(f"| {name} | " + " | ".join(
             sl(per, lambda r, lv=lv: _f(r["by_level"][str(lv)], True)) for lv in range(1, 6)) + " |")
+    if o.get("ship_decision"):
+        sd = o["ship_decision"]
+        L += ["\n### Ship decision (v3 vs v2, dataset v3)\n"]
+        t1d = sd["t1"]
+        L.append(f"- **Shipped: detector {sd['ship']}**")
+        L.append(f"- T1: v3 MS = {_f(t1d['v3_ms'], True)}, v2 MS = {_f(t1d['v2_ms'], True)}, "
+                 f"v3 wins T1: {t1d['v3_wins']}")
+        L.append(f"- Held-out wins: {sd['wins'] or 'none'}")
+        L.append(f"- Held-out losses: {sd['losses'] or 'none'}")
+        L.append(f"- FA cap violations: {sd['fa_violations'] or 'none'}")
+        L.append(f"- Reason: {sd['reason']}")
     if o["ablations"]:
         L += [f"\n### Ablations ({tt})\n", "| Variant | Matching Score | FA/min good pairs | FA/min null-edit |",
               "|---|---|---|---|"]

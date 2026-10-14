@@ -405,3 +405,49 @@ def test_t7_t8_registered():
     assert t7["text"].startswith("Please call Stella"), "T7 text must start with 'Please call Stella'"
     t8 = TEXTS["T8"]
     assert 17632 in t8["librivox_ids"], "T8 must reference LibriVox book 17632"
+
+
+# -- ship_decision tests ------------------------------------------------------
+
+def _run(ms: float, fa: float) -> dict:
+    """Minimal E.run()-shaped result for ship_decision tests."""
+    return {"ladders": {"matching_score": ms}, "fa_per_min_good_pairs": fa}
+
+
+def test_ship_decision_v3_wins_t1_and_two_held_out():
+    """v3 beats v2 on T1 and on 2 held-out texts, no FA violation → ship v3."""
+    from cadence.benchmark import ship_decision
+    v3 = {"T1": _run(0.60, 0.5), "T2": _run(0.55, 0.8), "T3": _run(0.50, 1.0)}
+    v2 = {"T1": _run(0.50, 0.4), "T2": _run(0.45, 0.9), "T3": _run(0.40, 1.1)}
+    d = ship_decision(v3, v2)
+    assert d["ship"] == "v3"
+    assert d["t1"]["v3_wins"] is True
+    assert set(d["wins"]) == {"T2", "T3"}
+    assert d["losses"] == []
+    assert d["fa_violations"] == []
+    assert "v3 beats v2" in d["reason"]
+
+
+def test_ship_decision_v3_wins_t1_but_only_one_held_out():
+    """v3 beats v2 on T1 and on 1 held-out text only → ship v2 (need >= 2)."""
+    from cadence.benchmark import ship_decision
+    v3 = {"T1": _run(0.60, 0.5), "T2": _run(0.55, 0.8), "T3": _run(0.38, 1.0)}
+    v2 = {"T1": _run(0.50, 0.4), "T2": _run(0.45, 0.9), "T3": _run(0.42, 1.1)}
+    d = ship_decision(v3, v2)
+    assert d["ship"] == "v2"
+    assert d["t1"]["v3_wins"] is True
+    assert d["wins"] == ["T2"]
+    assert d["losses"] == ["T3"]
+    assert "only 1" in d["reason"]
+
+
+def test_ship_decision_fa_cap_exceeded():
+    """v3 beats v2 on T1 and 2 held-out texts, but exceeds FA cap on one text where v2 is ok → ship v2."""
+    from cadence.benchmark import ship_decision
+    v3 = {"T1": _run(0.60, 0.5), "T2": _run(0.55, 2.5), "T3": _run(0.50, 0.8)}
+    v2 = {"T1": _run(0.50, 0.4), "T2": _run(0.45, 1.5), "T3": _run(0.40, 0.9)}
+    # T2: v2 FA=1.5 <= 2.0, v3 FA=2.5 > 2.0 → FA violation
+    d = ship_decision(v3, v2)
+    assert d["ship"] == "v2"
+    assert d["fa_violations"] == ["T2"]
+    assert "FA cap" in d["reason"]

@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: Task 4 — Indian-speaker held-out texts T7 (SAA) and T8 (Tagore) registered)
+> Last updated: 2026-10-14 (session 10: Task 5 — Benchmark: detector v3 as candidate with pre-registered ship rule)
 
 ## 1. What this project is
 
@@ -514,3 +514,24 @@ memory pressure.
   - New test `test_t7_t8_registered`: T7 and T8 in `test_texts()`, T7 has 12 sources each
     with 40-char sha1, T7 text starts with "Please call Stella", T8 has librivox_ids [17632].
   - 32 tests pass, 0 RuntimeWarnings.
+- **2026-10-14 (session 10, Task 5): Benchmark: detector v3 candidate with pre-registered ship rule.**
+  - `cadence/benchmark.py`:
+    - `MAIN = E.Config(phrase=True)` (detector v3); `"v2 detector (no phrase channels)": E.Config()`
+      added to ABLATIONS.
+    - `STATUS_NOTE` updated to reflect dataset v3, v3 candidate vs v2 with a pre-registered automatic
+      ship rule, T2–T6 development status, T7/T8 added post-v3-design, frozen v1 and v2 result dirs.
+    - `ship_decision(v3, v2, fa_cap=2.0)`: pure function taking per-text result dicts; returns
+      `{"ship": "v3"|"v2", "t1": {...}, "wins": [...], "losses": [...], "fa_violations": [...], "reason": str}`.
+      Rule: ship v3 iff v3 MS > v2 on T1 AND on >= 2 held-out texts, AND v3 FA/min <= fa_cap on every
+      held-out text where v2's is <= fa_cap.
+    - Ablation loop now runs `["T1", *TEST]` (was `TEST` only; cheap, reuses calibrated params; needed
+      for ship_decision).
+    - `main()`: runs ship_decision after all runs; saves winner's params to PARAMS; b1.lam copied from
+      winner. If v2 wins, B2 headline row re-run with v2 config; v3 stashed under ablations as "v3
+      detector (phrase channels)". `out["ship_decision"]` written to results.json.
+    - `markdown()`: "### Ship decision (v3 vs v2, dataset v3)" section added with T1 scores, wins/losses,
+      FA violations and reason.
+  - `tests/test_core.py`: three new `ship_decision` tests — v3 wins (T1 + 2 held-out, no FA violation)
+    → "v3"; v3 wins T1 but only 1 held-out → "v2"; v3 wins everything but FA cap exceeded on one text
+    where v2 is ok → "v2". 35 tests pass, 0 RuntimeWarnings.
+  - Long jobs (refs, ladders, evaluate) NOT run by this task; controller runs them.
