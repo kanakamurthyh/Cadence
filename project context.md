@@ -315,6 +315,8 @@ memory pressure.
     `docker-compose.yml` (dashboard + api, shared model-cache volume); README quick start, Docker, from-scratch
     reproduction and troubleshooting sections; `docs/ARCHITECTURE.md`. No scoring code changed.
   - Docker image not yet built locally (daemon was not running).
+  - README rebuilt as a showcase: badges, hero screenshot, 4-panel product gallery (`docs/screenshots/`, real
+    coach web app captures), mermaid pipeline diagram, B0/B1/B2 comparison with an honesty note, table of contents.
 
 - **2026-10-14 (session 10): demo video draft `~/Downloads/cadence_demo.mp4` (3:14, not in Git).** A 2:30 rap explainer
   (ElevenLabs Music, lyrics use only figures from the results files) over real app footage recorded with headless

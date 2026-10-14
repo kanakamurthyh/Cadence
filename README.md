@@ -1,15 +1,90 @@
-# Cadence
+<div align="center">
 
-**Contrastive speech analytics (Track C).** Cadence pinpoints the words where a delivery
-falls outside the range that several strong performances of the same text occupy, and
-explains each flag in measured units: seconds, semitones, dB and syllables per second.
-Because it judges against that range instead of one reference or generic norms, it can
-tell a real flaw from a legitimate stylistic choice.
+# 〰️ Cadence
 
-**Dataset:** [huggingface.co/datasets/Vedant1605/cadence-contrastive-speech](https://huggingface.co/datasets/Vedant1605/cadence-contrastive-speech),
-two subsets: `public_domain` (LibriVox texts) and `saa_indian_nc_sa` (T7, Speech Accent
-Archive, CC BY-NC-SA 4.0). 132 recordings and 443 labelled synthetic clips
-(`data/inventory.json`); card in [`data/DATA_CARD.md`](data/DATA_CARD.md).
+### Your delivery, judged against *every* great reading of the same words — not one, not a rulebook.
+
+**Contrastive speech analytics · Track C**
+
+[![CI](https://github.com/kanakamurthyh/Cadence/actions/workflows/rerun.yml/badge.svg)](https://github.com/kanakamurthyh/Cadence/actions/workflows/rerun.yml)
+![Python](https://img.shields.io/badge/python-3.12-3776AB?logo=python&logoColor=white)
+![uv](https://img.shields.io/badge/env-uv.lock%20pinned-DE5FE9)
+![Deterministic](https://img.shields.io/badge/output-byte--identical-2ea44f)
+![Tests](https://img.shields.io/badge/tests-58%20passing-2ea44f)
+![Docker](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)
+[![Dataset](https://img.shields.io/badge/%F0%9F%A4%97%20dataset-cadence--contrastive--speech-FFD21E)](https://huggingface.co/datasets/Vedant1605/cadence-contrastive-speech)
+
+<img src="docs/screenshots/home.png" alt="Cadence home: practice stats, words-in-range ring and per-dimension scores" width="900">
+
+[**Quick start**](#quick-start-5-minutes) · [**How it works**](#how-it-works) · [**Results**](#results-dataset-v3-shipped-detector-v2-thresholds-fitted-on-t1-only) · [**Architecture**](docs/ARCHITECTURE.md) · [**Technical report**](docs/technical_report.md) · [**Data card**](data/DATA_CARD.md)
+
+</div>
+
+---
+
+## The idea in 20 seconds
+
+Great speakers don't all read a passage the same way. They pause in different places, speed up
+differently and stress different words. So a single "reference" reading, or generic rules like
+"speak at 150 wpm", will flag perfectly good choices as mistakes.
+
+**Cadence measures the whole range that several strong readers of the *same text* occupy — the
+consensus envelope — and flags a word only when your delivery falls outside it.** Every flag
+comes with the measured numbers behind it (seconds, semitones, dB, syllables per second). No
+language model judges you, and the same audio always produces a byte-identical report.
+
+> **"You rushed 'that we here highly'.** Speaking rate 1.17× your own typical value; the good
+> renditions spanned 0.87–0.94 across six. *Slow down from 'that' to 'highly'.*"
+> — a real Cadence flag, with the evidence attached
+
+| | Generic rules (B0) | One reference (B1) | **Cadence envelope (B2)** |
+|---|---|---|---|
+| Knows a pause can be a valid style choice | ✗ | ✗ | **✓** |
+| False alarms per minute on good readers (T4) | 19.3 | 0.94 | **0.24** |
+| Matching Score on T4 (correct type, IoU ≥ 0.5) | 16% | 29% | **40%** |
+| Explains every flag in measured units | partly | ✓ | **✓** |
+
+T4 is shown because it is our clearest win; the envelope is **not** better everywhere (it loses to B1 on T6 and at equal false-alarm rates on T3/T6/T8). The full, honest tables are in [Results](#results-dataset-v3-shipped-detector-v2-thresholds-fitted-on-t1-only).
+
+## See it in action
+
+<table>
+<tr>
+<td width="50%"><img src="docs/screenshots/practice.png" alt="Practice mode with live read-along and pace gauge"><br><b>Practice.</b> Read along as words light up, with the good readers' pause marks, last time's weak spot underlined and a live pace gauge.</td>
+<td width="50%"><img src="docs/screenshots/report.png" alt="Report: words in range, top priority fix, rubric scores"><br><b>Report.</b> One dot per word (in range / borderline / out of range), the single most important fix and six rubric scores from 0 to 10.</td>
+</tr>
+<tr>
+<td width="50%"><img src="docs/screenshots/word_by_word.png" alt="Word-by-word chart of your rate against the good readers' band"><br><b>Word by word.</b> Your line against the grey band of good readers for rate, pauses, pitch range and loudness, plus a "where to focus" table with times, words and measured values.</td>
+<td width="50%"><img src="docs/screenshots/live_demo.png" alt="Live demo for judges: Cadence catches a rushed phrase that baselines miss"><br><b>Live demo for judges.</b> A known rushed edit on the Gettysburg Address: Cadence catches it with 1 flag; one reference misses it; generic rules raise 19 flags and miss it.</td>
+</tr>
+</table>
+
+## How it works
+
+```mermaid
+flowchart LR
+    A[🎙️ Your recording] --> B[Preprocess<br/>16 kHz · −23 LUFS]
+    B --> C[Find the passage<br/>wav2vec2 ASR]
+    C --> D[Align words<br/>MFA or CTC]
+    D --> E[Measure per word<br/>rate · pause · pitch · loudness]
+    E --> F{{Compare with<br/>consensus envelope}}
+    G[(K = 6 good readings<br/>of the same text)] --> F
+    F --> H[Detect regions<br/>hysteresis on d]
+    H --> I[📋 Report<br/>flags · numbers · scores · hash]
+```
+
+1. **Preprocess and locate.** Decode, resample, loudness-normalise, then find the passage in the audio
+   (spoken titles and chatter are trimmed; unrelated speech is rejected with what was heard).
+2. **Align and measure.** Every word gets start/end times and five measurements, normalised to *your*
+   own median so voice type and mic gain don't count, but how you vary them does.
+3. **Compare.** For each word, the envelope spans the lowest to highest good value plus a measured margin.
+   Deviation *d* is the distance outside it in units of typical envelope width (inside → 0).
+4. **Detect, explain, score.** Consecutive high-*d* words form a region typed as one of six flaws —
+   rushed/dragging pace, missing pause, misplaced pause, monotone, missed emphasis, volume fade — each
+   explained with its numbers. Thresholds are fitted on **T1 only**, never on test texts.
+
+<details>
+<summary><b>Same thing as a one-line ASCII diagram</b></summary>
 
 ```
 upload ─► preprocess ─► align words ─► extract features ─► ENVELOPE COMPARE ─► detect regions ─► type + explain ─► report
@@ -18,6 +93,10 @@ upload ─► preprocess ─► align words ─► extract features ─► ENVEL
                                                                   ▲                                         ▲
                        dataset factory (offline): good renditions ─► flaw injector ─► labelled ladders ─────┘ calibration
 ```
+
+</details>
+
+**Dataset:** [huggingface.co/datasets/Vedant1605/cadence-contrastive-speech](https://huggingface.co/datasets/Vedant1605/cadence-contrastive-speech) — 132 recordings across 8 texts and 443 labelled synthetic flaw clips (`public_domain` and `saa_indian_nc_sa` subsets; card in [`data/DATA_CARD.md`](data/DATA_CARD.md)).
 
 ## Quick start (≈5 minutes)
 
