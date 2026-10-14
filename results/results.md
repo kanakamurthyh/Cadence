@@ -141,3 +141,14 @@
 | mp3_64k | 45% | 0.29 | 18 |
 | telephone_band | 45% | 0.24 | 10 |
 | wrong_word | 45% | 0.24 | 18 |
+
+### Robustness (T7 ladders, severities 3 and 5, envelope K=all)
+
+| Condition | Matching Score | Time F1 | Onset err (ms) |
+|---|---|---|---|
+| clean | 39% | 0.32 | 10 |
+| noise_20 | 33% | 0.25 | 1 |
+| noise_10 | 22% | 0.24 | 11 |
+| mp3_64k | 33% | 0.28 | 9 |
+| telephone_band | 39% | 0.71 | 10 |
+| wrong_word | 39% | 0.32 | 10 |
