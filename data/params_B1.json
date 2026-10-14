@@ -9,25 +9,30 @@
   "volume": 30.458975093204035
  },
  "margin": {
-  "loud": 0.276,
+  "loud": 0.27600500000000006,
   "pause": 0.0,
-  "pitch_range": 0.1886,
-  "pitch_range_rel": 0.1948,
-  "prom_loud": 0.4365,
-  "prom_pitch": 0.7791,
-  "rate": 0.0176,
-  "rate_rel": 0.0183
+  "pitch_range": 0.1885739013923461,
+  "pitch_range_rel": 0.1948454550772301,
+  "pitch_spread_phr": 0.2394945929481096,
+  "prom_loud": 0.4364999999999998,
+  "prom_pitch": 0.7790999999999998,
+  "rate": 0.017561922287443292,
+  "rate_phr": 0.009159999285470042,
+  "rate_rel": 0.01841875553971067
  },
+ "phrase_channels": false,
  "relative_channels": true,
  "scale": {
-  "loud": 6.3295,
-  "pause": 1.3785,
-  "pitch_range": 1.8151,
-  "pitch_range_rel": 1.112,
+  "loud": 6.3294999999999995,
+  "pause": 1.3785116232537298,
+  "pitch_range": 1.8151168894800056,
+  "pitch_range_rel": 1.1121918663647108,
+  "pitch_spread_phr": 0.7429726065082305,
   "prom_loud": 9.3737,
   "prom_pitch": 6.018,
-  "rate": 0.8529,
-  "rate_rel": 0.3137
+  "rate": 0.8528631011674599,
+  "rate_phr": 0.28911853513726216,
+  "rate_rel": 0.31368116536144486
  },
  "sev_scale": "injected level 1-5 (provisional until the listening test)",
  "sev_x": [
