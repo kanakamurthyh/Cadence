@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: Task 5 fix round 1 — Two-phase ship decision; report relative to shipped detector)
+> Last updated: 2026-10-14 (session 10: Task 6 — Severity-gradient evidence figures)
 
 ## 1. What this project is
 
@@ -298,6 +298,14 @@ memory pressure.
 - [ ] YouTube video (3–10 min, opening with the section 9 script) and the Devpost page (Track C, all teammates).
 
 ## 8. Change log
+
+- **2026-10-14: Task 6 — Severity-gradient evidence figures (session 10).**
+  - Added `scripts/gradient_figures.py`: data-driven, re-runnable with one command.
+  - Added optional dependency group `report` (matplotlib) to `pyproject.toml`.
+  - Outputs: `docs/figures/gradient_matching_by_severity.png`, `gradient_by_type.png`, `false_alarms_null_edit.png`, `label_timing_error.png`, `results/gradient.json`.
+  - Added `tests/test_figures.py` (9 tests, data-extraction only, no plotting).
+  - Embedded 4 figures with captions in `README.md` (Evidence section) and `docs/technical_report.md` (§4a).
+  - All 50 tests pass.
 
 - **2026-10-13: initial build (sessions 1–3).**
   - Read the spec.

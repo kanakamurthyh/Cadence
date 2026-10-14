@@ -183,6 +183,20 @@ clip. Counted once per clip, the flags attributable to the edit are 0–0.3 per 
 **Human data.** The reader ranking, the listening test (perceived severity) and annotated
 natural takes are all pending; the tools are ready (`cadence human`, `cadence natural`).
 
+## 4a. Evidence figures
+
+![Matching score vs severity](figures/gradient_matching_by_severity.png)
+*Figure 1. Matching score rises monotonically across severities 1–5 for all three methods (pooled held-out texts T2–T6, faint lines = per-text), demonstrating that the bad-mirror gradient is recovered by detection; B2 leads at severities 4–5.*
+
+![Injected effect by flaw type](figures/gradient_by_type.png)
+*Figure 2. Absolute injected effect magnitude (median ± IQR, all texts) is monotone in severity for every flaw type, validating the data-engineering claim that each ladder rung is genuinely harder than the one below it.*
+
+![False-alarm rate B1 vs B2](figures/false_alarms_null_edit.png)
+*Figure 3. FA/min on good-reference pairs (left) and null-edit clips (right) for B1 vs B2 across held-out texts; null-edit FA equals good-pair FA, confirming the detector does not react to PSOLA resynthesis.*
+
+![Label timing error](figures/label_timing_error.png)
+*Figure 4. Per-clip timing-map error histogram (ms) with B2 median onset/offset detection error as reference lines; the label pipeline is accurate to within the aligner floor (~30 ms), and detection onset/offset match that precision on matched flaws.*
+
 ## 5. Limitations
 
 - **The envelope is not universally better.** On the untouched T6, B1 matches or beats B2, so

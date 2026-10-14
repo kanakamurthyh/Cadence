@@ -106,6 +106,20 @@ on T6, B1 scores 15% and B2 5%. The dashboard therefore offers B1 as a calibrate
 **Demo** (`cadence demo`, Demo tab): a rushed-pace edit on T4 is found by B2 with IoU 0.97
 (onset error 8 ms). B1 misses it, and B0 smears it over 6.8 s.
 
+## Evidence
+
+![Matching score vs severity](docs/figures/gradient_matching_by_severity.png)
+*Matching score (flaw detected with correct type and IoU ≥ 0.5) rises monotonically from severity 1 to 5 for all three methods, confirming the bad-mirror gradient; B2 leads at the higher severities.*
+
+![Injected effect by flaw type](docs/figures/gradient_by_type.png)
+*Absolute injected effect magnitude (median ± IQR over all texts) is monotone in severity for all six flaw types, validating the data-engineering claim that the synthetic ladder is properly graded.*
+
+![False-alarm rate B1 vs B2](docs/figures/false_alarms_null_edit.png)
+*False alarms per minute on good-reference pairs and on null-edit clips (PSOLA-resynthesised but unmodified) for B1 and B2 across held-out texts; B2 is lower than B1 on T4 but higher on T2, T3 and T6.*
+
+![Label timing error](docs/figures/label_timing_error.png)
+*Histogram of per-clip timing-map error in ms (skewed right, >90% of clips under 50 ms); dashed reference lines show median onset/offset detection error from matched B2 predictions.*
+
 ## Status and honest deviations from the spec
 
 - **Aligner.** MFA could not be installed here (it needs conda), so the results use the
