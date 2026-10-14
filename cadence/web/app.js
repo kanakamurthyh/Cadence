@@ -10,6 +10,7 @@ const ICON = {
   mic: '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3M9 21h6"/></svg>',
   micOff: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18M9 9v2a3 3 0 0 0 5.1 2.1M15 9.3V6a3 3 0 0 0-5.7-1.3M19 11a7 7 0 0 1-1 3.6M5 11a7 7 0 0 0 10.6 6M12 18v3"/></svg>',
   check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12l4 4 10-10"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>',
   play: '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><polygon points="6 4 20 12 6 20"/></svg>',
   arrow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
   info: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/></svg>',
@@ -338,6 +339,7 @@ async function viewHome() {
         ${top ? `<section class="card" style="display:flex;flex-wrap:wrap;align-items:center;gap:20px"><span class="bigicon" style="width:52px;height:52px;background:var(--rose);color:var(--rose-ink)">${ICON.alert}</span>
           <div style="flex:1 1 300px;min-width:0"><h2 style="font-size:18px">Practise next: ${esc(headline(rep, top).replace(/\.$/, ""))}</h2><p class="meta">${esc(explainParts(top).tip)}</p></div>
           <a class="btn" href="#/practice?t=${esc(rep.text_id)}&w0=${top.w0}&w1=${top.w1}">Practise this line ${ICON.arrow}</a></section>` : ""}
+        ${(() => { const lt = all.find((s) => s.mode === "test"), h = lt ? beforeAfterHTML(lt) : ""; return h.includes("ba-pair") ? `<a class="ba-link" href="#/report/${esc(lt.id)}" aria-label="Open your latest test">${h}</a>` : ""; })()}
         <section style="padding:0 8px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px"><h2 style="font-size:20px">Trends</h2><a href="#/reports" style="font-size:14px;color:var(--muted);text-decoration:none">All reports</a></div>${trend}</section>
       </div>
       <aside class="col" style="flex:1 1 240px" aria-label="Rubric, latest session">${dimsHTML(rep, false)}</aside>
@@ -387,6 +389,8 @@ async function viewPractice(params) {
       </div>
       <div class="modebar"><div class="seg" role="group" aria-label="Mode">${["practice", "test"].map((m) => `<button data-mode="${m}" aria-pressed="${mode === m}"${state === "recording" ? " disabled" : ""}>${m === "practice" ? "Practice" : "Test"}</button>`).join("")}</div>
         <span class="meta">${mode === "practice" ? "Guided: read the green words as they light up, pause at the marks." : "No hints. Only your own words light up; the report counts as a test."}</span></div>
+      ${mode === "practice" ? `<div class="listenbar"><button class="btn" id="listen"${state === "recording" ? " disabled" : ""}>${ICON.play} Listen first</button>
+        <span class="meta">Hear a good reader: ${esc(t.model.reader)}, ${fmtTime(t.typical_s)}. The words light up as they’re read.</span></div>` : ""}
       ${mode === "practice"
         ? `<div class="live-legend"><span><i class="lg-guide"></i>Read these now</span><span><i class="lg-pz"></i>Good readers pause</span>${hw ? `<span><i class="lg-flag"></i>Flagged last time</span>` : ""}<span><i class="lg-you"></i>You</span></div>`
         : `<div class="live-legend"><span><i class="lg-you"></i>You</span><span><i class="lg-done"></i>Read</span></div>`}
@@ -569,17 +573,57 @@ async function viewPractice(params) {
   };
   const go = (s) => {
     state = s; paint();
-    document.querySelectorAll("[data-mode], #passage").forEach((b) => (b.disabled = s === "recording"));
+    document.querySelectorAll("[data-mode], #passage, #listen").forEach((b) => (b.disabled = s === "recording"));
   };
   const paintPassage = () => {
     $("#passage-card").innerHTML = passageHTML();
-    $("#passage").addEventListener("change", (e) => { tid = e.target.value; hw = null; findFocus(); paintPassage(); });
+    $("#passage").addEventListener("change", (e) => { stopListen(); tid = e.target.value; hw = null; findFocus(); paintPassage(); });
+    $("#listen")?.addEventListener("click", listen);
     document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
       if (state === "recording") return;
-      mode = b.dataset.mode; store.set("settings", { ...settings(), mode }); paintPassage();
+      stopListen(); mode = b.dataset.mode; store.set("settings", { ...settings(), mode }); paintPassage();
     }));
     if (mode === "practice") paintGuidePreview();
   };
+  /* Listen first (Practice): play the good reading closest to the typical length; the guide follows the audio. */
+  const model = { audio: null, raf: 0 };
+  function stopListen() {
+    if (!model.audio) return;
+    model.audio.pause(); cancelAnimationFrame(model.raf); model.audio = null;
+    const box = $("#passage-text"); if (!box) return;
+    box.classList.remove("live");
+    box.querySelectorAll(".w").forEach((w) => w.classList.remove("done", "ghost", "guide"));
+    const b = $("#listen"); if (b) b.innerHTML = `${ICON.play} Listen first`;
+    if (mode === "practice") paintGuidePreview();
+  }
+  function listen() {
+    if (model.audio) return stopListen();
+    const t = textById(tid), a = new Audio(`/api/model/${encodeURIComponent(tid)}`);
+    model.audio = a;
+    $("#listen").innerHTML = `${ICON.stop} Stop`;
+    $("#passage-text").classList.add("live");
+    let last = -2;
+    const loop = () => {
+      if (model.audio !== a) return;
+      const ct = a.currentTime, st = t.model.starts;
+      let i = -1; while (i + 1 < st.length && st[i + 1] <= ct + 0.05) i++;
+      if (i !== last) {
+        last = i;
+        const [ga, gb] = phraseAt(Math.max(i, 0));
+        $("#passage-text").querySelectorAll(".w").forEach((w) => {
+          const k = Number(w.dataset.i);
+          w.classList.toggle("done", k < i); w.classList.toggle("ghost", k === i); w.classList.toggle("guide", k >= ga && k <= gb);
+        });
+        const cur = $("#passage-text .w.ghost");
+        if (cur) { const r = cur.getBoundingClientRect(); if (r.bottom > innerHeight - 140 || r.top < 80) window.scrollBy({ top: r.top - innerHeight * 0.4, behavior: "smooth" }); }
+      }
+      model.raf = requestAnimationFrame(loop);
+    };
+    a.addEventListener("ended", stopListen);
+    a.addEventListener("error", () => { stopListen(); toast("Couldn’t play the good reading."); });
+    a.play().then(loop).catch(() => { stopListen(); toast("Couldn’t play the good reading."); });
+  }
+  addEventListener("hashchange", stopListen, { once: true });
   /* Before recording, Practice shows the first phrase to read. */
   const paintGuidePreview = () => {
     const [a, b] = phraseAt(0);
@@ -596,6 +640,7 @@ async function viewPractice(params) {
     try { await openMic(); go("ready"); } catch (e) { go(e && e.name === "NotAllowedError" ? "denied" : "denied"); if (e && e.name !== "NotAllowedError") toast(`Microphone error: ${e.message || e.name}`); }
   }
   function startRec() {
+    stopListen();
     const types = ["audio/webm;codecs=opus", "audio/webm", "audio/mp4", "audio/ogg"];
     const mime = types.find((m) => window.MediaRecorder && MediaRecorder.isTypeSupported(m)) || "";
     mic.chunks = [];
@@ -667,6 +712,31 @@ async function viewPractice(params) {
   paint();
 }
 
+/* Before/after: your first Test on a passage against a later Test (Read Naturally's cold vs hot timing). */
+function beforeAfterHTML(sess) {
+  if (sess.mode !== "test") return "";
+  const tests = sessions().filter((s) => s.mode === "test" && s.report.text_id === sess.report.text_id)
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+  const first = tests[0];
+  const practice = (from, to) => sessions().filter((s) => s.mode === "practice" && s.report.text_id === sess.report.text_id
+    && new Date(s.date) > new Date(from.date) && new Date(s.date) < new Date(to.date)).length;
+  if (!first || first.id === sess.id) {
+    return `<section class="card ba"><div class="ba-base"><span class="eyebrow">BASELINE</span><h2>This is your first test on this passage</h2>
+      <p class="meta">Practise it with the guide, then take another test: Cadence will show this score next to the new one.</p></div>
+      <a class="btn primary" href="#/practice?t=${esc(sess.report.text_id)}">Practise this passage ${ICON.arrow}</a></section>`;
+  }
+  const a = summary(first.report), b = summary(sess.report), d = b.pct - a.pct, n = practice(first, sess);
+  const side = (label, s, sm) => `<div class="ba-side"><span class="eyebrow">${label}</span><div class="ba-num">${sm.pct}<span>/100</span></div>
+    <div class="meta">${new Date(s.date).toLocaleDateString()} · ${s.report.regions.length} to fix</div></div>`;
+  const dims = DIMS.map(([key, label]) => {
+    const x = first.report.scores[key], y = sess.report.scores[key], dd = y - x;
+    return `<li><span>${label}</span><span class="meta">${x.toFixed(1)} → ${y.toFixed(1)}</span><span class="ba-d ${dd > 0.05 ? "up" : dd < -0.05 ? "down" : ""}">${dd > 0.05 ? "+" : ""}${dd.toFixed(1)}</span></li>`;
+  }).join("");
+  return `<section class="card ba" aria-label="Before and after">
+    <div class="ba-pair">${side("FIRST TEST", first, a)}<div class="ba-arrow">${ICON.arrow}<span class="ba-chip ${d > 0 ? "up" : d < 0 ? "down" : ""}">${d ? `${d > 0 ? "+" : ""}${d} points` : "No change"}</span></div>${side("THIS TEST", sess, b)}</div>
+    <div class="ba-detail"><p class="meta">${n ? `After ${n} practice run${n > 1 ? "s" : ""} in between. ` : ""}Words in the good readers’ range, then each rubric dimension (0–10).</p><ul class="ba-dims">${dims}</ul></div></section>`;
+}
+
 async function viewReport(id) {
   await loadTexts();
   const sess = sessions().find((s) => s.id === id);
@@ -676,7 +746,7 @@ async function viewReport(id) {
   const header = `<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px">
       <div><h1 class="hello" style="font-size:40px">${esc(sess.title)}</h1><p class="sub">${sess.mode === "test" ? '<span class="modetag test">Test</span> ' : sess.mode === "practice" ? '<span class="modetag">Practice</span> ' : ""}${fmtTime(sess.duration || 0)} · ${rep.words.length} words · compared with ${rep.k} good reading${rep.k > 1 ? "s" : ""} of the same text</p></div>
       <div style="display:flex;flex-wrap:wrap;gap:10px"><button class="btn" id="dl">${ICON.download}Download report</button><a class="btn primary" href="#/practice?t=${esc(rep.text_id)}">Practise again</a></div></div>`;
-  renderReport(main, sess, { header });
+  renderReport(main, sess, { header: header + beforeAfterHTML(sess) });
   $("#dl").addEventListener("click", () => {
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([JSON.stringify(rep, null, 1)], { type: "application/json" }));

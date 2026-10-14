@@ -67,6 +67,16 @@ def _ghost(tid: str) -> dict:
             "slow": np.round(m.max(0), 2).tolist(), "pause_after": [int(i) for i in np.flatnonzero(gap >= PAUSE_S)]}
 
 
+def _model(tid: str) -> dict:
+    """The 'Listen first' reading: the good reader whose length is closest to the median, with word start times
+    (seconds into that recording) so Practice can highlight along with the audio."""
+    gs, d = good_set(tid), _durations(tid)
+    rid = gs[int(np.argmin(np.abs(np.array(d) - np.median(d))))]
+    meta = json.loads((REFS / tid / f"{rid}.json").read_text())
+    return {"id": rid, "reader": meta["meta"].get("reader", rid), "licence": meta["meta"].get("licence", ""),
+            "starts": [round(w["start"], 2) for w in meta["words"]]}
+
+
 @app.get("/api/texts")
 def texts():
     """Passages that can be analysed: speeches first, then research texts."""
@@ -79,7 +89,7 @@ def texts():
             "id": tid, "title": t["title"], "author": t.get("author", ""), "context": CONTEXT.get(tid, ""),
             "display": display_text(tid), "words": len(words_of(t["text"])),
             "typical_s": float(np.median(d)), "range_s": [float(min(d)), float(max(d))],
-            "group": "speech" if tid in SPEECHES else "research", "role": t["role"], "ghost": _ghost(tid),
+            "group": "speech" if tid in SPEECHES else "research", "role": t["role"], "ghost": _ghost(tid), "model": _model(tid),
         })
     out.sort(key=lambda r: (r["group"] != "speech", r["id"]))
     return out
@@ -156,6 +166,17 @@ def recording(sid: str):
     if not s:
         raise HTTPException(404, "Recording not available (sessions are kept in memory only).")
     return Response(_wav(s["x"]), media_type="audio/wav")
+
+
+@app.get("/api/model/{tid}")
+def model_audio(tid: str):
+    """Audio of the 'Listen first' reading for a passage."""
+    if tid not in TEXTS or not _analyzable(tid):
+        raise HTTPException(404, "Unknown passage.")
+    p = REFS / tid / f"{_model(tid)['id']}.wav"
+    if not p.exists():
+        raise HTTPException(404, "Reading not available.")
+    return FileResponse(p, media_type="audio/wav")
 
 
 @app.post("/api/demo")

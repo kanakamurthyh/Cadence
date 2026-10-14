@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: coach web app — Practice and Test modes, live read-along)
+> Last updated: 2026-10-14 (session 10: coach web app — before/after card, Listen first, Practice/Test modes)
 
 ## 1. What this project is
 
@@ -145,7 +145,7 @@ beats B1 on T2–T4 and T7, ties T8 and loses T6 (27 vs 29%). Missed emphasis is
 | Severity-gradient evidence figures | Done (`scripts/gradient_figures.py` → `docs/figures/`, `results/gradient.json`) |
 | Gradio dashboard (analyze, A/B, dataset explorer, evidence, Demo tab on T3) | Done |
 | FastAPI `POST /analyze`, CLI `cadence …` | Done |
-| Coach web app (`cadence web`, http://localhost:8000): mic permission → record → analyze → report; live read-along (Chrome speech recognizer); **Practice mode** (guide phrase, pause marks, tip at last report's weak spot, pace gauge) and **Test mode** (no hints, report tagged "Test") | Done; headless-tested with a fake mic and scripted recognizer, **not yet tested by a human with a real mic** |
+| Coach web app (`cadence web`, http://localhost:8000): mic permission → record → analyze → report; live read-along (Chrome speech recognizer); **Practice mode** (Listen first, guide phrase, pause marks, tip at last report's weak spot, pace gauge) and **Test mode** (no hints, report tagged "Test"); before/after card (first Test vs this Test) on reports and Home | Done; headless-tested with a fake mic and scripted recognizer, **not yet tested by a human with a real mic** |
 | Listening-test and reader-ranking tools (`cadence human`) | Built; **no human data yet** |
 | Human-data import: perceived-severity calibration, natural takes (`cadence natural`), `cadence status`, `cadence compare` | Done and fixture-tested; awaiting real data |
 | Frozen results for comparison | `results/baseline_2026-10-13/`, `results/frozen_v1_2026-10-14/`, `results/frozen_v2_2026-10-14/` |
@@ -284,7 +284,7 @@ memory pressure.
 ## 7. Pending / next steps
 
 - [ ] Test the coach web app with real users (mic flow, Safari/Firefox recording formats, Practice vs Test modes) and collect feedback.
-- [ ] Consider the ideas in `reports/Speech delivery coaching methods.md` (main checkout, untracked): e.g. a cold Test → Practice → hot Test loop with side-by-side scores.
+- [ ] Remaining ideas from `reports/Speech delivery coaching methods.md` (main checkout, untracked): research pause names, Test rubric breakdown weighted to the weakest part, fading the guide over repeats, at most 2–3 flags per read.
 - [ ] Web app: History/Trends needs ≥ 2 sessions; reports live in the browser (localStorage), A/B audio only until the server restarts.
 
 - [ ] Human reader ranking: 3 teammates rank all readings (`cadence human`), then `cadence refs && cadence ladders`, check with `cadence status`.
@@ -298,6 +298,15 @@ memory pressure.
 - [ ] Merge `scoring-push` into `main` and push (needs the user's go-ahead).
 
 ## 8. Change log
+
+- **2026-10-14 (session 10): before/after card and "Listen first" (from the coaching-methods research).**
+  - Before/after (Read Naturally's cold vs hot timing): a Test report shows the first Test on that passage next to
+    this one (words in range /100, change in points, issues to fix, each rubric dimension, practice runs in between).
+    The first Test shows a "baseline" card. Home shows the latest comparison. Practice reports show no card.
+  - Listen first (Practice only): plays the good reading closest to the typical length (`web._model`,
+    `GET /api/model/{tid}`); words and the guide phrase light up with the audio. It stops on record, passage or
+    mode change, or leaving the page.
+  - New test `test_listen_first_model_reading`; 57 tests pass. Headless Chrome: no page errors, no overflow at 390 px.
 
 - **2026-10-14 (session 10): Practice and Test modes in the web app.**
   - Practice (default): the "read these now" guide highlights the current phrase at a typical good reader's pace;
