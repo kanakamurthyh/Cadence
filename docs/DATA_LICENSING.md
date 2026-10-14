@@ -34,7 +34,7 @@ each). None of these speakers or their recordings appear in any calibration text
 | saa_telugu2 | Telugu | Guntur, Andhra Pradesh, India | M | 18 | 6 (academic) |
 | saa_tamil2 | Tamil | Madras, Tamil Nadu, India | F | 35 | 4 (naturalistic) |
 | saa_tamil5 | Tamil | Coimbatore, Tamil Nadu, India | F | 36 | 5 (academic) |
-| saa_marathi1 | Marathi | Bombay, India | M | 21 | 3 (academic) |
+| saa_marathi1 | Marathi | Bombay, India | F | 21 | 3 (academic) |
 | saa_marathi2 | Marathi | Madras, India | M | 28 | 10 (academic) |
 | saa_malayalam1 | Malayalam | Kerala State, India | M | 24 | 5 (academic) |
 | saa_malayalam2 | Malayalam | Trivandrum, Kerala, India | F | 29 | 5 (academic) |
