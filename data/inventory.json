@@ -19,7 +19,7 @@
    "align_conf_min": 0.912,
    "synthetic_clips": {
     "null": 6,
-    "ladder": 60,
+    "ladder": 55,
     "compound": 2
    }
   },
@@ -42,7 +42,7 @@
    "align_conf_min": 0.958,
    "synthetic_clips": {
     "null": 6,
-    "ladder": 60,
+    "ladder": 55,
     "compound": 4
    }
   },
@@ -88,7 +88,7 @@
    "align_conf_min": 0.959,
    "synthetic_clips": {
     "null": 6,
-    "ladder": 60,
+    "ladder": 55,
     "compound": 4
    }
   },
@@ -110,8 +110,8 @@
   "T6": {
    "title": "If- (first two stanzas)",
    "role": "test-final",
-   "recordings": 15,
-   "speakers": 15,
+   "recordings": 17,
+   "speakers": 17,
    "good_set": [
     "lv188_02_catharine_eastman",
     "lv188_04_fox_in_the_stars",
@@ -122,11 +122,57 @@
    ],
    "good_set_method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking",
    "eligible_for_envelope": true,
-   "align_conf_median": 0.976,
+   "align_conf_median": 0.978,
    "align_conf_min": 0.959,
    "synthetic_clips": {
     "null": 6,
-    "ladder": 60,
+    "ladder": 55,
+    "compound": 4
+   }
+  },
+  "T7": {
+   "title": "Please call Stella (Speech Accent Archive)",
+   "role": "test-indian",
+   "recordings": 12,
+   "speakers": 12,
+   "good_set": [
+    "saa_bengali6",
+    "saa_tamil2",
+    "saa_marathi1",
+    "saa_malayalam2",
+    "saa_telugu2",
+    "saa_tamil5"
+   ],
+   "good_set_method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking",
+   "eligible_for_envelope": true,
+   "align_conf_median": 0.929,
+   "align_conf_min": 0.871,
+   "synthetic_clips": {
+    "null": 6,
+    "ladder": 45,
+    "compound": 4
+   }
+  },
+  "T8": {
+   "title": "Fruit-Gathering XVIII",
+   "role": "test-indian",
+   "recordings": 16,
+   "speakers": 16,
+   "good_set": [
+    "lv17632_13_kerry_adams",
+    "lv17632_12_adrian_stephens",
+    "lv17632_06_bruce_kachuk",
+    "lv17632_10_matthew_mcnaughton",
+    "lv17632_14_david_lawrence",
+    "lv17632_03_algy_pug"
+   ],
+   "good_set_method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking",
+   "eligible_for_envelope": true,
+   "align_conf_median": 0.977,
+   "align_conf_min": 0.962,
+   "synthetic_clips": {
+    "null": 6,
+    "ladder": 50,
     "compound": 4
    }
   }
@@ -140,6 +186,9 @@
    "mark f.",
    "shurtagal"
   ],
+  "T1-T8": [
+   "lee ann"
+  ],
   "T2-T3": [
    "david lawrence",
    "maria kasper",
@@ -149,6 +198,11 @@
    "david lawrence",
    "maria kasper",
    "winston tharp"
+  ],
+  "T2-T8": [
+   "bruce kachuk",
+   "david lawrence",
+   "larry wilson"
   ],
   "T3-T4": [
    "ann boulais",
@@ -170,6 +224,14 @@
    "sue anderson",
    "triciag",
    "winston tharp"
+  ],
+  "T3-T8": [
+   "david lawrence",
+   "triciag"
+  ],
+  "T4-T8": [
+   "david lawrence",
+   "triciag"
   ]
  },
  "calibration_speakers_in_test_texts": {
@@ -177,10 +239,12 @@
   "T3": [],
   "T4": [],
   "T5": [],
-  "T6": []
+  "T6": [],
+  "T7": [],
+  "T8": []
  },
  "totals": {
-  "recordings": 102,
-  "synthetic_clips": 348
+  "recordings": 132,
+  "synthetic_clips": 443
  }
 }
