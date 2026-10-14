@@ -301,6 +301,21 @@ memory pressure.
 
 ## 8. Change log
 
+- **2026-10-14 (session 10): merged `scoring-push` into `main` (fast-forward, no conflicts) and pushed.**
+  - Research reports and notes now tracked: `reports/` and `research_notes/` (Indian speech dataset sources;
+    speech-delivery coaching methods; famous speech renditions). Generated data (`data/ladders` v3 etc.) copied
+    from the `Cadence-v3` worktree into this checkout (still gitignored; the audio is on Hugging Face).
+- **2026-10-14 (research, folded in at merge): Indian speech dataset sources.** `reports/Indian speech dataset sources.md`:
+  Speech Accent Archive is the only large identical-text Indian-English pool (CC BY-NC-SA 4.0); LibriVox Tagore
+  "XVIII" (16 readers, public domain) the best unrestricted multi-reader text; historical recordings (Gandhi 1931,
+  Nehru 1947, Bose 1943) are single performances, unsuitable for an envelope. T7/T8 staging details:
+  `data/raw/STAGING_REPORT_T7_T8.md` (T7: 12 India-born SAA speakers, 2 per L1; T8: 16 LibriVox readers, none
+  Indian-named).
+- **2026-10-14 (research, folded in at merge): speech-delivery coaching methods.** `reports/Speech delivery coaching methods.md`:
+  no product documented compares a user's prosody with several human readings of the same passage; closest
+  precedents Project LISTEN and Schwanenflugel's adult pitch-contour match. Its build list was implemented
+  (before/after card, Listen first, guide fading, four-part Test score, pause names, top-3 hints).
+
 - **2026-10-14 (session 10): solo instructed-take kit (teammates unavailable).**
   - Decision: no synthetic voices or AI "listeners" stand in for human data; a solo, clearly labelled session instead.
   - `data/takes/instructed_plan.json` fixes 5 T3 takes before recording (natural; rushed 87–102; monotone 139–150;
@@ -308,7 +323,7 @@ memory pressure.
     labels timed by alignment (`data/annotations/instructed/`). Guide: `docs/solo_recording.md`.
   - Web app review step: "Save this recording" download. Take audio is gitignored (`data/takes/*/*.<audio>`).
   - Dry run on a stand-in LibriVox T3 reading (then deleted): labels written, `cadence natural` scored. 58 tests pass.
-  - Famous-speaker search (notes: `research_notes/Famous speech renditions/notes.md`, main checkout): no famous
+  - Famous-speaker search (notes: `research_notes/Famous speech renditions/notes.md`): no famous
     speech has more than 1 open re-reading (Day of Infamy, JFK 1961, FDR 1933, Eisenhower 1961). Best option found:
     Tennyson's own 1890 recording of "The Charge of the Light Brigade" (Wikimedia, public domain; noisy cylinder,
     use as the famous reference, not in the envelope) plus 17 LibriVox readers (project 9688, Public Domain Mark).
@@ -342,7 +357,7 @@ memory pressure.
     reports and the report list show a Practice/Test tag. Mode is remembered in settings and locked while recording.
   - `/api/texts` ghost timings gain `pause_after`; new test `test_ghost_pause_cues_are_inside_the_passage`. 56 tests pass.
   - Deep research on how other products coach delivery: `reports/Speech delivery coaching methods.md` with notes in
-    `research_notes/Speech delivery coaching methods/` (main checkout, untracked).
+    `research_notes/Speech delivery coaching methods/` .
 
 - **2026-10-14 (session 10, final-review fix wave): disclosed the dataset-v3 RNG side effect (no rebuild, user's choice).**
   - Cause: in `inject.choose_spans`, `stress_rule < 2 and len(pick(...)) < n` short-circuits under rule 2, so the probe
