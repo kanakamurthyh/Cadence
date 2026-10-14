@@ -101,15 +101,15 @@ function headline(rep, r) {
   const nxt = rep.words[Math.min(r.w0 + 1, rep.words.length - 1)]?.word ?? "";
   switch (r.type) {
     case "pace": return r.side > 0 ? `You rushed “${w}”.` : `You dragged “${w}”.`;
-    case "missing_pause": return `You didn’t pause after “${w0}”.`;
-    case "misplaced_pause": return `You paused inside “${w0} ${nxt}”.`;
+    case "missing_pause": return `Good readers pause after “${w0}”; you didn’t.`;
+    case "misplaced_pause": return `You paused inside the phrase “${w0} ${nxt}”.`;
     case "monotone": return `Your pitch went flat on “${w}”.`;
     case "missed_emphasis": return `You didn’t stress “${w0}”.`;
     case "volume_fade": return `Your volume faded on “${w}”.`;
     default: return `Check “${w}”.`;
   }
 }
-const ISSUE = { pace: (r) => (r.side > 0 ? "Rushed pace" : "Dragging pace"), missing_pause: () => "Missing pause", misplaced_pause: () => "Pause in the wrong place", monotone: () => "Monotone", missed_emphasis: () => "Missed emphasis", volume_fade: () => "Volume fade" };
+const ISSUE = { pace: (r) => (r.side > 0 ? "Rushed pace" : "Dragging pace"), missing_pause: () => "No pause at a phrase break", misplaced_pause: () => "Pause inside a phrase", monotone: () => "Monotone", missed_emphasis: () => "Missed emphasis", volume_fade: () => "Volume fade" };
 function explainParts(r) {
   const body = (r.explanation || "").split("): ").slice(1).join("): ") || r.explanation || "";
   const sentences = body.split(/(?<=\.)\s+/);
@@ -117,6 +117,21 @@ function explainParts(r) {
   let what = sentences.join(" ");
   what = what.charAt(0).toUpperCase() + what.slice(1);
   return { what, tip };
+}
+/* Four-part fluency rubric (after Rasinski & Zutell's scale) built from the six dimensions; the overall leans on the
+   weakest part (0.4 × lowest + 0.2 × each other), the way Azure's pronunciation score does. Display only: no new thresholds. */
+function rubric4(rep) {
+  const s = rep.scores, avg = (...k) => k.reduce((a, x) => a + s[x], 0) / k.length;
+  const parts = [["Expression", avg("pitch_variety", "emphasis", "volume"), "pitch variety, stress, volume"],
+    ["Phrasing", s.pausing, "pauses at phrase breaks"], ["Smoothness", s.fluency, "no pauses inside phrases"], ["Pace", s.pacing, "speed against good readers"]];
+  const v = parts.map((p) => p[1]).sort((a, b) => a - b);
+  return { parts, overall: 0.4 * v[0] + 0.2 * (v[1] + v[2] + v[3]) };
+}
+function rubricHTML(rep) {
+  const r = rubric4(rep), weak = r.parts.reduce((a, b) => (b[1] < a[1] ? b : a));
+  return `<section class="card rubric" aria-labelledby="h-rubric"><div class="rb-overall"><span class="eyebrow">TEST SCORE</span>
+      <div class="ba-num">${r.overall.toFixed(1)}<span>/10</span></div><p class="meta">Weighted toward your weakest part${weak[1] < 9.95 ? `: <b>${weak[0].toLowerCase()}</b>` : ""}.</p></div>
+    <ul class="rb-parts">${r.parts.map(([k, v, d]) => `<li><div class="t"><span>${k}</span><span>${v.toFixed(1)}</span></div><div class="bar"><i style="width:${(v * 10).toFixed(0)}%"></i></div><div class="meta">${d}</div></li>`).join("")}</ul></section>`;
 }
 const topRegion = (rep) => rep.regions.slice().sort((a, b) => (b.severity ?? b.d_mean) - (a.severity ?? a.d_mean))[0];
 
@@ -179,10 +194,14 @@ function renderReport(el, sess, opts = {}) {
       <h2 id="h-fix">${esc(headline(rep, top))}</h2><p>${esc(p.what)}</p>${p.tip ? `<p class="tip">${esc(p.tip)}</p>` : ""}
       <div class="ab">${live ? `<button class="btn primary" data-play="${i}:you">${ICON.play}Play yours</button><button class="btn white" data-play="${i}:good">${ICON.play}Play a good reader</button>` : `<span class="meta">Audio playback is available right after an analysis.</span>`}</div></section>`;
   })() : `<section class="fix clean"><span class="eyebrow">ALL CLEAR</span><h2>Every word stayed inside the good readers’ range.</h2><p>Nothing was flagged. Try a harder passage, or read this one with a different interpretation.</p></section>`;
-  const rows = rep.regions.map((r, i) => `<tr><td style="white-space:nowrap">${r.start.toFixed(1)}–${r.end.toFixed(1)} s</td>
+  const row = (r, i) => `<tr><td style="white-space:nowrap">${r.start.toFixed(1)}–${r.end.toFixed(1)} s</td>
       <td>${r.w0 + 1}–${r.w1 + 1} · “${esc(wordsText(rep, r, 8))}”</td><td><span class="tag">${esc(ISSUE[r.type](r))}</span></td>
       <td>${esc(explainParts(r).what)}</td><td>${(r.severity ?? 0).toFixed(1)} / 5</td>
-      <td style="white-space:nowrap">${live ? `<button class="iconbtn" aria-label="Play yours" data-play="${i}:you">${ICON.play}</button> <button class="iconbtn" aria-label="Play a good reader" data-play="${i}:good" style="color:var(--ok-ink)">${ICON.play}</button>` : ""}</td></tr>`).join("");
+      <td style="white-space:nowrap">${live ? `<button class="iconbtn" aria-label="Play yours" data-play="${i}:you">${ICON.play}</button> <button class="iconbtn" aria-label="Play a good reader" data-play="${i}:good" style="color:var(--ok-ink)">${ICON.play}</button>` : ""}</td></tr>`;
+  /* Show the 3 most severe as hints first; the rest (smaller differences) fold away in reading order. */
+  const ranked = rep.regions.map((r, i) => [r, i]).sort((a, b) => (b[0].severity ?? b[0].d_mean) - (a[0].severity ?? a[0].d_mean));
+  const shown = ranked.slice(0, 3).sort((a, b) => a[0].start - b[0].start), rest = ranked.slice(3).sort((a, b) => a[0].start - b[0].start);
+  const head = `<thead><tr><th>Time</th><th>Words</th><th>Issue</th><th>What we measured</th><th>Severity</th><th><span class="sr">Listen</span></th></tr></thead>`;
   el.innerHTML = `
     ${opts.header ?? ""}
     <div class="row">
@@ -198,6 +217,7 @@ function renderReport(el, sess, opts = {}) {
       </section>
       <div style="flex:1 1 380px;display:flex;min-width:0">${fix}</div>
     </div>
+    ${sess.mode === "test" ? rubricHTML(rep) : ""}
     ${dimsHTML(rep, true)}
     <section class="card" style="display:flex;flex-direction:column;gap:18px" aria-labelledby="h-chart">
       <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px">
@@ -209,8 +229,10 @@ function renderReport(el, sess, opts = {}) {
       </div>
       <div id="chart"></div>
     </section>
-    ${rep.regions.length ? `<section class="card" aria-labelledby="h-flags"><h2 id="h-flags" style="margin-bottom:14px">Flagged regions</h2>
-      <div class="tablewrap"><table><thead><tr><th>Time</th><th>Words</th><th>Issue</th><th>What we measured</th><th>Severity</th><th><span class="sr">Listen</span></th></tr></thead><tbody>${rows}</tbody></table></div></section>` : ""}
+    ${rep.regions.length ? `<section class="card" aria-labelledby="h-flags"><h2 id="h-flags">Where to focus</h2>
+      <p class="meta" style="margin:4px 0 14px">Hints, not verdicts: ${shown.length === 1 ? "the one place" : `the ${shown.length} places`} where you were furthest outside the good readers’ range.</p>
+      <div class="tablewrap"><table>${head}<tbody>${shown.map(([r, i]) => row(r, i)).join("")}</tbody></table></div>
+      ${rest.length ? `<details class="more"><summary>${rest.length} smaller difference${rest.length > 1 ? "s" : ""}</summary><div class="tablewrap"><table>${head}<tbody>${rest.map(([r, i]) => row(r, i)).join("")}</tbody></table></div></details>` : ""}</section>` : ""}
     <div class="foot"><span>Compared with ${rep.k} good reading${rep.k > 1 ? "s" : ""} of ${esc(t ? t.title : rep.text_id)} · thresholds fitted on ${esc(rep.params_fitted_on)}</span><span>Report ${esc(rep.hash)} · same audio gives the same report</span></div>`;
   let lane = "rate", whole = !top;
   const draw = () => {
@@ -363,6 +385,11 @@ async function viewPractice(params) {
     if (!hw) hw = focus ? [focus.w0, focus.w1] : null;
   };
   findFocus();
+  /* The guide fades as you practise a passage (scaffolding withdrawn over repeats): full → lighter → minimal. */
+  const GUIDES = { full: ["Full guide", "Phrase to read now, a typical reader’s word, pause marks."], light: ["Lighter", "A typical reader’s word and pause marks; no phrase band."], minimal: ["Minimal", "Pause marks only. Keep your own pace."] };
+  const practiceRuns = () => sessions().filter((s) => s.mode === "practice" && s.report.text_id === tid).length;
+  const autoGuide = () => { const n = practiceRuns(); return n === 0 ? "full" : n === 1 ? "light" : "minimal"; };
+  let guide = autoGuide();
   let state = "permission", take = null, err = "";
   const pausesOf = () => new Set(textById(tid).ghost.pause_after || []);
 
@@ -390,7 +417,9 @@ async function viewPractice(params) {
       <div class="modebar"><div class="seg" role="group" aria-label="Mode">${["practice", "test"].map((m) => `<button data-mode="${m}" aria-pressed="${mode === m}"${state === "recording" ? " disabled" : ""}>${m === "practice" ? "Practice" : "Test"}</button>`).join("")}</div>
         <span class="meta">${mode === "practice" ? "Guided: read the green words as they light up, pause at the marks." : "No hints. Only your own words light up; the report counts as a test."}</span></div>
       ${mode === "practice" ? `<div class="listenbar"><button class="btn" id="listen"${state === "recording" ? " disabled" : ""}>${ICON.play} Listen first</button>
-        <span class="meta">Hear a good reader: ${esc(t.model.reader)}, ${fmtTime(t.typical_s)}. The words light up as they’re read.</span></div>` : ""}
+        <span class="meta">Hear a good reader: ${esc(t.model.reader)}, ${fmtTime(t.typical_s)}. The words light up as they’re read.</span></div>
+      <div class="listenbar"><div class="seg" role="group" aria-label="Guide">${Object.keys(GUIDES).map((g) => `<button data-guide="${g}" aria-pressed="${guide === g}"${state === "recording" ? " disabled" : ""}>${GUIDES[g][0]}</button>`).join("")}</div>
+        <span class="meta">${GUIDES[guide][1]}${practiceRuns() ? ` Practice run ${practiceRuns() + 1} on this passage: the guide fades as you improve.` : ""}</span></div>` : ""}
       ${mode === "practice"
         ? `<div class="live-legend"><span><i class="lg-guide"></i>Read these now</span><span><i class="lg-pz"></i>Good readers pause</span>${hw ? `<span><i class="lg-flag"></i>Flagged last time</span>` : ""}<span><i class="lg-you"></i>You</span></div>`
         : `<div class="live-legend"><span><i class="lg-you"></i>You</span><span><i class="lg-done"></i>Read</span></div>`}
@@ -497,12 +526,12 @@ async function viewPractice(params) {
   function paintFollow() {
     const box = $("#passage-text"); if (!box || !follow.on) return;
     const p = paceNow(), guided = mode === "practice";
-    const [ga, gb] = guided ? phraseAt(Math.max(p.ghost, 0)) : [-1, -2];  // before you start, the first phrase
+    const [ga, gb] = guided && guide === "full" ? phraseAt(Math.max(p.ghost, 0)) : [-1, -2];  // before you start, the first phrase
     box.querySelectorAll(".w").forEach((w) => {
       const i = Number(w.dataset.i);
       w.classList.toggle("done", SR && i < follow.ptr);
       w.classList.toggle("cur", SR && i === follow.ptr && follow.voiceAt > 0);
-      w.classList.toggle("ghost", guided && i === p.ghost);
+      w.classList.toggle("ghost", guided && guide !== "minimal" && i === p.ghost);
       w.classList.toggle("guide", i >= ga && i <= gb);
     });
     const cur = box.querySelector(".w.cur") || box.querySelector(".w.guide");
@@ -547,7 +576,7 @@ async function viewPractice(params) {
       case "recording": return `<div class="recorder center"><div style="align-self:stretch;display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--muted)"><span style="display:flex;align-items:center;gap:8px;color:#A23B48;font-weight:600"><span class="sw bad" style="width:10px;height:10px"></span>Recording</span><span id="timer" style="font-size:18px;color:var(--ink)">0:00</span></div>
         ${mode === "practice" ? `<div class="gauge" id="gauge" data-state="wait" aria-live="polite">
           <div class="pace-h" id="pace-h">Start reading</div><div class="meta" id="pace-s">The highlight follows your voice.</div>
-          <div class="track" aria-hidden="true"><span class="zone">Slower</span><span class="band">Good readers</span><span class="zone">Faster</span><i id="pace-dot" hidden></i></div>
+          <div class="track" aria-hidden="true"><span class="zone">Slower</span><span class="band">Good readers · ${Math.round((t.words * 60) / t.range_s[1])}–${Math.round((t.words * 60) / t.range_s[0])} wpm</span><span class="zone">Faster</span><i id="pace-dot" hidden></i></div>
         </div>` : `<div class="gauge testmode"><div class="pace-h">Test mode</div><div class="meta" id="test-note">No hints while you read. Your report shows how it went.</div></div>`}
         <div style="align-self:stretch"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px"><span id="wc"></span><span>Good readers ≈ ${fmtTime(t.typical_s)}</span></div><div class="progress"><div id="wprog"></div></div></div>
         <button class="stopbtn" id="stop" aria-label="Stop recording"><span></span></button><div class="meta">Stop when you reach the last word.</div></div>`;
@@ -573,12 +602,13 @@ async function viewPractice(params) {
   };
   const go = (s) => {
     state = s; paint();
-    document.querySelectorAll("[data-mode], #passage, #listen").forEach((b) => (b.disabled = s === "recording"));
+    document.querySelectorAll("[data-mode], [data-guide], #passage, #listen").forEach((b) => (b.disabled = s === "recording"));
   };
   const paintPassage = () => {
     $("#passage-card").innerHTML = passageHTML();
-    $("#passage").addEventListener("change", (e) => { stopListen(); tid = e.target.value; hw = null; findFocus(); paintPassage(); });
+    $("#passage").addEventListener("change", (e) => { stopListen(); tid = e.target.value; hw = null; findFocus(); guide = autoGuide(); paintPassage(); });
     $("#listen")?.addEventListener("click", listen);
+    document.querySelectorAll("[data-guide]").forEach((b) => b.addEventListener("click", () => { if (state === "recording") return; stopListen(); guide = b.dataset.guide; paintPassage(); }));
     document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
       if (state === "recording") return;
       stopListen(); mode = b.dataset.mode; store.set("settings", { ...settings(), mode }); paintPassage();
@@ -626,7 +656,7 @@ async function viewPractice(params) {
   addEventListener("hashchange", stopListen, { once: true });
   /* Before recording, Practice shows the first phrase to read. */
   const paintGuidePreview = () => {
-    const [a, b] = phraseAt(0);
+    const [a, b] = guide === "full" ? phraseAt(0) : [-1, -2];
     $("#passage-text").querySelectorAll(".w").forEach((w) => { const i = Number(w.dataset.i); w.classList.toggle("guide", i >= a && i <= b); });
   };
   paintPassage();
@@ -728,7 +758,9 @@ function beforeAfterHTML(sess) {
   const a = summary(first.report), b = summary(sess.report), d = b.pct - a.pct, n = practice(first, sess);
   const side = (label, s, sm) => `<div class="ba-side"><span class="eyebrow">${label}</span><div class="ba-num">${sm.pct}<span>/100</span></div>
     <div class="meta">${new Date(s.date).toLocaleDateString()} · ${s.report.regions.length} to fix</div></div>`;
-  const dims = DIMS.map(([key, label]) => {
+  const o1 = rubric4(first.report).overall, o2 = rubric4(sess.report).overall, od = o2 - o1;
+  const overall = `<li><span><b>Test score</b></span><span class="meta">${o1.toFixed(1)} → ${o2.toFixed(1)}</span><span class="ba-d ${od > 0.05 ? "up" : od < -0.05 ? "down" : ""}">${od > 0.05 ? "+" : ""}${od.toFixed(1)}</span></li>`;
+  const dims = overall + DIMS.map(([key, label]) => {
     const x = first.report.scores[key], y = sess.report.scores[key], dd = y - x;
     return `<li><span>${label}</span><span class="meta">${x.toFixed(1)} → ${y.toFixed(1)}</span><span class="ba-d ${dd > 0.05 ? "up" : dd < -0.05 ? "down" : ""}">${dd > 0.05 ? "+" : ""}${dd.toFixed(1)}</span></li>`;
   }).join("");

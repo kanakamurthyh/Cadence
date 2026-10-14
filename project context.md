@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: coach web app — before/after card, Listen first, Practice/Test modes)
+> Last updated: 2026-10-14 (session 10: coach web app — research ideas: guide fading, test rubric, focus hints)
 
 ## 1. What this project is
 
@@ -284,7 +284,6 @@ memory pressure.
 ## 7. Pending / next steps
 
 - [ ] Test the coach web app with real users (mic flow, Safari/Firefox recording formats, Practice vs Test modes) and collect feedback.
-- [ ] Remaining ideas from `reports/Speech delivery coaching methods.md` (main checkout, untracked): research pause names, Test rubric breakdown weighted to the weakest part, fading the guide over repeats, at most 2–3 flags per read.
 - [ ] Web app: History/Trends needs ≥ 2 sessions; reports live in the browser (localStorage), A/B audio only until the server restarts.
 
 - [ ] Human reader ranking: 3 teammates rank all readings (`cadence human`), then `cadence refs && cadence ladders`, check with `cadence status`.
@@ -298,6 +297,17 @@ memory pressure.
 - [ ] Merge `scoring-push` into `main` and push (needs the user's go-ahead).
 
 ## 8. Change log
+
+- **2026-10-14 (session 10): remaining web-app ideas from the coaching-methods research (display only; no detector change).**
+  - Guide fading: Practice has Full guide / Lighter / Minimal; the default steps down with your practice runs on the
+    passage (0 → Full, 1 → Lighter, 2+ → Minimal); you can override it; locked while recording.
+  - Test score: Test reports show a four-part rubric (Expression = mean of pitch variety, emphasis, volume;
+    Phrasing = pausing; Smoothness = fluency; Pace = pacing) and an overall weighted to the weakest part
+    (0.4 × lowest + 0.2 × each other). The before/after card adds the Test score row.
+  - Hints, not verdicts: "Where to focus" shows the 3 most severe regions; the rest fold under "N smaller differences".
+  - Pause names: "No pause at a phrase break" and "Pause inside a phrase".
+  - Pace gauge band shows the good readers' own speed range in words per minute (from their durations).
+  - 57 tests pass; headless Chrome: no page errors, no overflow at 390 px.
 
 - **2026-10-14 (session 10): before/after card and "Listen first" (from the coaching-methods research).**
   - Before/after (Read Naturally's cold vs hot timing): a Test report shows the first Test on that passage next to
