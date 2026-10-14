@@ -295,11 +295,17 @@ memory pressure.
 - [ ] T5: ≥ 2 (ideally 4) teammate takes of "Day of Infamy" plus consent forms.
 - [ ] Confirm by listening whether any T8 (Tagore) reader is Indian-accented.
 - [ ] Confirm the Hugging Face audio upload finished (repo is public; upload was in progress during the docs pass).
-- [ ] YouTube video (3–10 min) and the Devpost page (Track C, all teammates).
+- [ ] Upload `~/Downloads/cadence_demo.mp4` (3:14) to YouTube and finish the Devpost page (Track C, all teammates).
 - [ ] Make the v3 emphasis rule RNG-neutral (always run the probe pick), rebuild ladders, re-evaluate.
 - [ ] Merge `scoring-push` into `main` and push (needs the user's go-ahead).
 
 ## 8. Change log
+
+- **2026-10-14 (session 10): demo video draft `~/Downloads/cadence_demo.mp4` (3:14, not in Git).** A 2:30 rap explainer
+  (ElevenLabs Music, lyrics use only figures from the results files) over real app footage recorded with headless
+  Chrome, captions with the key numbers, a 36 s narrated "How it works" (ElevenLabs voice "Alice") and an end card
+  with repo and dataset links; the end card states the music and narration are AI-generated. Build scripts live
+  in the session scratchpad only.
 
 - **2026-10-14 (session 10): merged `scoring-push` into `main` (fast-forward, no conflicts) and pushed.**
   - Research reports and notes now tracked: `reports/` and `research_notes/` (Indian speech dataset sources;
