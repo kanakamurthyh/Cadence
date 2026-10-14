@@ -1,0 +1,29 @@
+services:
+  dashboard:
+    build: .
+    image: cadence:latest
+    ports:
+      - "7860:7860"
+    volumes:
+      - hf-cache:/app/.cache/huggingface
+    restart: unless-stopped
+
+  api:
+    image: cadence:latest
+    depends_on:
+      - dashboard
+    command: ["/app/.venv/bin/cadence", "api"]
+    ports:
+      - "8000:8000"
+    volumes:
+      - hf-cache:/app/.cache/huggingface
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/texts', timeout=4)"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+    restart: unless-stopped
+
+volumes:
+  hf-cache:

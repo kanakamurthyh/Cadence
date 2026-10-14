@@ -6,6 +6,7 @@ def test_robustness_wrong_word_coverage():
     """Every test text (except T5) has a WRONG_WORD entry with a word present in the text."""
     import importlib.util
     from pathlib import Path
+
     from cadence.data.texts import TEXTS
 
     # Load robustness.py dynamically to access WRONG_WORD

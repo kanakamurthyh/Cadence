@@ -23,7 +23,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "ruff>=0.6"]
 report = [
     "matplotlib>=3.11.2",
 ]
@@ -37,3 +37,28 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["cadence"]
+
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["research_notes", "reports"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+# Rules below would need broad, behaviour-adjacent rewrites of research code; left off on purpose.
+ignore = [
+  "E501",  # long lines (formatter not applied)
+  "E702",  # compact one-line statements in numeric code
+  "E741",  # short math variable names (l, I)
+  "B007",  # unused loop variables
+  "B008",  # function calls in defaults (FastAPI/argparse idioms)
+  "B904",  # raise-from inside except
+  "B905",  # zip(strict=...) would change failure behaviour
+  "F841",  # unused local kept for readability
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+  "ignore:.*BlockingPortal.*:DeprecationWarning",
+]

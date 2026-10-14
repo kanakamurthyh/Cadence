@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import cache
 
 import numpy as np
 from sklearn.isotonic import IsotonicRegression
@@ -62,19 +62,20 @@ class Config:
 
 # -- data ---------------------------------------------------------------------
 
-@lru_cache(maxsize=None)
+@cache
 def selection(tid):
     return json.loads((REFS / tid / "selection.json").read_text())
 
 
-@lru_cache(maxsize=None)
+@cache
 def manifest(tid):
     return json.loads((LADDERS / tid / "manifest.json").read_text())
 
 
-@lru_cache(maxsize=None)
+@cache
 def _record(path_str: str):
     from pathlib import Path
+
     from .features import word_basics
     d = json.loads(Path(path_str).read_text())
     feats = {k: np.array([np.nan if v is None else v for v in vals], float) for k, vals in d["feats"].items()}
@@ -82,7 +83,7 @@ def _record(path_str: str):
     return d["words"], add_derived(feats), d["meta"]
 
 
-@lru_cache(maxsize=None)
+@cache
 def record(kind: str, tid: str, rid: str, norm: str = "level"):
     """(words, feats, meta) for a reference or ladder clip, under a normalization."""
     base = (REFS if kind == "ref" else LADDERS) / tid / rid
@@ -98,7 +99,7 @@ def refs_for(tid: str, exclude: str, k: int | None) -> list[str]:
     return ids if k is None else ids[:k]
 
 
-@lru_cache(maxsize=None)
+@cache
 def envelope_for(tid: str, exclude: str, k, norm: str):
     return build([record("ref", tid, r, norm)[1] for r in refs_for(tid, exclude, k)])
 

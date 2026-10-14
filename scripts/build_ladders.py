@@ -11,7 +11,6 @@ import argparse
 import json
 import os
 from concurrent.futures import ProcessPoolExecutor
-from pathlib import Path
 
 import numpy as np
 

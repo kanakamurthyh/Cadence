@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: solo instructed-take kit; famous-speech source search running)
+> Last updated: 2026-10-14 (session 11: reproducibility pass — committed ref feature JSONs, Makefile, ruff, CI, Docker, architecture doc)
 
 ## 1. What this project is
 
@@ -258,8 +258,11 @@ cadence/        package: audio, align, features, envelope, detect, inject, pipel
                 baselines, metrics, evaluate, benchmark, app (Gradio), api (FastAPI),
                 human (listening test + ranking), cli, data/{texts,librivox}
 scripts/        fetch_librivox, build_refs, build_ladders, robustness, make_demo, rerun_check
-data/           demo/, params.json, DATA_CARD.md; raw/, refs/, ladders/, listening/ and
-                rankings/ are generated/local assets and gitignored
+data/           demo/, params.json, DATA_CARD.md, refs/T*/*.json (per-reading features +
+                selection.json, committed so analysis works from a fresh clone); raw/, refs/*.wav,
+                ladders/, listening/ and rankings/ are generated/local assets and gitignored
+Makefile        setup / test / lint / verify / demo / app / web / reproduce / docker targets
+docs/ARCHITECTURE.md  module map, data flow, design decisions
 results/        results.json, results.md, robustness_T*.json, gradient.json, rerun_hashes.json,
                 rebuild_check_2026-10-14.md, frozen_v1_/frozen_v2_2026-10-14/
 docs/           technical_report.md, figures/, DATA_LICENSING.md
@@ -270,6 +273,8 @@ logs/           run logs
 ## 6. How to run
 
 ```bash
+make setup && make verify # pinned env, tests, byte-identical rerun check (works from a fresh clone)
+make demo                 # analyze the T3 demo clip -> results/demo_report.json
 uv sync --extra dev
 uv run cadence all        # fetch → refs → ladders → evaluate (long: run with nohup, ≤ 3 workers)
 uv run cadence web        # coach web app http://localhost:8000 (mic permission → record → report)
@@ -300,6 +305,16 @@ memory pressure.
 - [ ] Merge `scoring-push` into `main` and push (needs the user's go-ahead).
 
 ## 8. Change log
+
+- **2026-10-14 (session 11): reproducibility & code-quality pass.**
+  - Per-reading reference feature JSONs and `selection.json` (`data/refs/T*/*.json`, 140 files, 2.6 MB) are now
+    committed; only reference WAVs stay ignored. Before, a fresh clone could not run `cadence analyze`, the demo or
+    the CI rerun check. Verified in a clean copy: both rerun-check hashes match the stored ones.
+  - Added `Makefile` (setup/test/lint/verify/demo/app/web/reproduce/docker), ruff config + CI lint step, pytest config,
+    uv cache in CI; `.dockerignore`, hardened `Dockerfile` (pinned uv 0.9.5, non-root, HF cache dir, healthcheck),
+    `docker-compose.yml` (dashboard + api, shared model-cache volume); README quick start, Docker, from-scratch
+    reproduction and troubleshooting sections; `docs/ARCHITECTURE.md`. No scoring code changed.
+  - Docker image not yet built locally (daemon was not running).
 
 - **2026-10-14 (session 10): demo video draft `~/Downloads/cadence_demo.mp4` (3:14, not in Git).** A 2:30 rap explainer
   (ElevenLabs Music, lyrics use only figures from the results files) over real app footage recorded with headless

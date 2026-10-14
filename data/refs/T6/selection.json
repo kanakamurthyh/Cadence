@@ -1,0 +1,30 @@
+{
+ "good": [
+  "lv188_02_catharine_eastman",
+  "lv188_04_fox_in_the_stars",
+  "lv188_03_chip",
+  "lv188_07_kara_shallenberg_1969_20",
+  "lv188_12_norah_piehl",
+  "lv188_13_patricia_oakley"
+ ],
+ "ranking": [
+  "lv188_02_catharine_eastman",
+  "lv188_04_fox_in_the_stars",
+  "lv188_03_chip",
+  "lv188_07_kara_shallenberg_1969_20",
+  "lv188_12_norah_piehl",
+  "lv188_13_patricia_oakley",
+  "lv188_10_martin_clifton",
+  "lv188_09_lydia_uribe",
+  "lv188_01_annie_coleman_rothenberg",
+  "lv188_08_linton",
+  "lv188_14_robert_rakauskas",
+  "lv188_06_kayvan_sylvan",
+  "lv188_15_stefan_schmelz",
+  "lv188_16_steve_andersen",
+  "lv188_05_gregory_rubin",
+  "lv188_11_marlo_dianne",
+  "lv188_17_seth_woodworth"
+ ],
+ "method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking"
+}

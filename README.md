@@ -19,23 +19,57 @@ upload ─► preprocess ─► align words ─► extract features ─► ENVEL
                        dataset factory (offline): good renditions ─► flaw injector ─► labelled ladders ─────┘ calibration
 ```
 
-## Prerequisites
+## Quick start (≈5 minutes)
 
-- macOS or Linux, Python 3.12, [`uv`](https://docs.astral.sh/uv/), and `ffmpeg` on PATH
-  (`brew install uv ffmpeg`, or use the Dockerfile).
-- About 3 GB of disk: PyTorch plus the 360 MB wav2vec2 alignment model, which downloads on first run.
-- Optional: the Montreal Forced Aligner (`mfa` on PATH, with the `english_us_arpa` models).
-  When it is present it is used automatically; otherwise the CTC wav2vec2 aligner runs.
+**Prerequisites:** macOS or Linux, Python 3.12, [`uv`](https://docs.astral.sh/uv/), and `ffmpeg`
+on PATH (`brew install uv ffmpeg`, or skip all of this and use [Docker](#docker)). About 3 GB of
+disk for PyTorch plus the 360 MB wav2vec2 alignment model. Optional: the Montreal Forced Aligner
+(`mfa` on PATH with the `english_us_arpa` models) is used automatically when present; otherwise
+the CTC wav2vec2 aligner runs.
 
-## Setup and one-command run
+The per-reading reference features (`data/refs/T*/<id>.json` and `selection.json`, 2.6 MB) and
+the fitted parameters (`data/params.json`) are committed, so analysis, the demo and the rerun
+check work from a fresh clone without downloading any source audio.
+
+| Step | With `make` | Plain `uv` equivalent | Expected result |
+|---|---|---|---|
+| 1. Clone | `git clone https://github.com/kanakamurthyh/Cadence.git && cd Cadence` | same | |
+| 2. Install | `make setup` | `uv sync --frozen --extra dev` | Pinned env from `uv.lock`; a few minutes the first time (PyTorch) |
+| 3. Verify | `make verify` | `uv run pytest -q && uv run python scripts/rerun_check.py` | All tests pass; both demo clips print `identical across 2 runs: True, matches stored: True` |
+| 4. Demo | `make demo` | `uv run cadence analyze data/demo/demo_T3_flawed.wav --text T3 --out results/demo_report.json` | JSON report (flagged regions, explanations, rubric scores, hash) in `results/demo_report.json` |
+| 5a. Dashboard | `make app` | `uv run cadence app` | Gradio dashboard at http://localhost:7860 |
+| 5b. Coach web app | `make web` | `uv run cadence web` | Record-and-coach UI at http://localhost:8000 |
+
+The first analysis also downloads the wav2vec2 model (~360 MB), so step 3 is slower the first
+time. `make help` lists every target; `make lint` runs ruff; `make clean` removes caches.
+
+### Docker
 
 ```bash
-uv sync --extra dev          # pinned environment from uv.lock
-uv run cadence all           # fetch -> refs -> ladders -> calibrate + evaluate (long; run with nohup)
-uv run cadence app           # dashboard at http://localhost:7860
+make docker && make docker-run      # build the image, serve the dashboard on port 7860
+# open http://localhost:7860
 ```
 
-Individual steps:
+The image pins `PYTHONHASHSEED=0` and installs ffmpeg, so it needs nothing on the host but Docker.
+
+### Reproducing the results from scratch
+
+`make reproduce` runs the whole pipeline under `nohup` with at most 3 workers and logs to
+`logs/reproduce.log` (`tail -f logs/reproduce.log` to follow it). It is long (dominated
+by downloading and aligning every reading). The stages, which can also be run one by one:
+
+| Stage | Command | Output |
+|---|---|---|
+| 1. Fetch | `uv run cadence fetch` | Source recordings (LibriVox, Speech Accent Archive, NARA) in `data/raw/` |
+| 2. Refs | `uv run cadence refs` | Per-reading alignment + features and the good set, `data/refs/T*/` (also the reference WAVs used for A/B playback) |
+| 3. Ladders | `uv run cadence ladders` | Synthetic flaw ladders, null-edit and compound clips with labels, `data/ladders/T*/` |
+| 4. Evaluate | `uv run cadence evaluate` | Fitted `data/params.json`, `results/results.json`, `results/results.md` |
+
+`uv run cadence all` chains the four stages. Thresholds, λ and the severity mapping are fitted
+on **T1 only**; T2–T8 are held out and never used for tuning. The pre-registered ship rule in
+`cadence/benchmark.py` picks the shipped detector automatically.
+
+### All commands
 
 | Command | What it does |
 |---|---|
@@ -57,6 +91,46 @@ Individual steps:
 | `python scripts/robustness.py --text T7 --workers 3` | Noise, MP3, telephone-band and wrong-word robustness → `results/robustness_<T>.json` |
 | `python scripts/rerun_check.py` | Byte-identical rerun check (also run in CI) |
 | `uv run --extra report python scripts/gradient_figures.py` | Regenerates the four evidence figures and `results/gradient.json` |
+
+### Troubleshooting
+
+- **`ffmpeg: not found` / audio decode errors.** Install ffmpeg (`brew install ffmpeg` or
+  `apt-get install ffmpeg`) and make sure it is on PATH; every upload is decoded through it.
+- **The microphone button does nothing.** Browsers only allow microphone access on `localhost`
+  or HTTPS. Open http://localhost:8000 (not the LAN IP) or put the app behind HTTPS.
+- **The first analysis is slow.** It downloads the wav2vec2 alignment model (~360 MB) once;
+  later runs use the cached copy.
+- **MFA not found.** Optional. Without `mfa` on PATH Cadence falls back to the CTC wav2vec2
+  aligner, which is what the published results use.
+- **A/B playback is silent or missing.** It needs the reference WAVs, which are not committed.
+  Run `uv run cadence fetch && uv run cadence refs` (long; use `nohup`).
+
+### Repository layout
+
+```
+cadence/                   Python package (entry point: cadence/cli.py -> `cadence <command>`)
+  Online analysis          audio.py (decode, 16 kHz, -23 LUFS, VAD) · align.py (MFA or CTC wav2vec2)
+                           features.py (per-word rate/pause/pitch/loudness) · envelope.py (consensus
+                           envelope, deviations) · detect.py (regions, type, severity, explanation,
+                           rubric scores) · pipeline.py (preprocess -> ... -> report, deterministic JSON)
+  Dataset factory          data/texts.py (texts T1-T8) · data/librivox.py (fetch) · inject.py (flaw
+                           injector) · labels.py (label export + validation) · inventory.py · natural.py
+                           (teammate takes) · human.py (listening test) · status.py
+  Calibration/evaluation   evaluate.py (T1 calibration, held-out evaluation) · benchmark.py (ship rule,
+                           results/) · baselines.py (B0 generic norms) · metrics.py · compare.py · demo.py
+  Interfaces               cli.py · app.py (Gradio :7860) · web.py + web/ (coach app :8000) · api.py (FastAPI)
+scripts/                   fetch_librivox.py, build_refs.py, build_ladders.py (pipeline stages),
+                           rerun_check.py (determinism), robustness.py, gradient_figures.py,
+                           make_demo.py, instructed_labels.py
+tests/                     test_core.py, test_benchmark.py, test_web.py, test_figures.py, test_human_data.py
+data/                      params.json (frozen detector params) · refs/ (committed reference features)
+                           ladders/ · labels/ · demo/ · inventory.{csv,json} · DATA_CARD.md · raw/ (fetched)
+results/                   results.{json,md}, rerun_hashes.json, robustness_T*.json, frozen_* snapshots
+docs/                      ARCHITECTURE.md, technical_report.md, figures/, DATA_LICENSING.md, protocols
+```
+
+How the pieces fit together, the design decisions behind determinism and calibration, and how
+to add a text or a flaw type: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Data
 

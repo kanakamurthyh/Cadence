@@ -1,0 +1,31 @@
+# VCS / tooling
+.git
+.gitignore
+.claude
+.venv
+**/__pycache__
+**/*.pyc
+.pytest_cache
+.ruff_cache
+.mypy_cache
+
+# Large or private data (refs JSON, params*.json and data/demo are kept)
+data/raw
+data/ladders
+data/refs/*/*.wav
+logs
+
+# Root-level documents and screenshots only (docs/figures is kept)
+/*.png
+*.pdf
+
+# Research artefacts not needed at runtime
+research_notes
+reports
+results/frozen_*
+results/baseline_*
+
+# Container files themselves
+Dockerfile
+docker-compose.yml
+.dockerignore

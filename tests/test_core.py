@@ -467,7 +467,6 @@ def test_ship_decision_v3_loses_t1_wins_all_held_out():
 
 def test_ship_decision_none_nan_handling():
     """Non-finite v3 MS counts as a loss; non-finite v3 FA (where v2 is ok) counts as a violation."""
-    import math
     from cadence.benchmark import ship_decision
     # T2: v3 MS = NaN (loss), v3 FA = NaN (FA violation since v2 FA = 0.9 <= 2.0)
     # T3: normal v3 win
@@ -485,7 +484,6 @@ def test_ship_decision_none_nan_handling():
 
 def test_report_configs_ship_v3():
     """When ship=v3 (phrase=True): B1 and all ablations share phrase=True; v1 has phrase=False; other=v2."""
-    import dataclasses
     from cadence import evaluate as E
     from cadence.benchmark import report_configs
     ship = E.Config(phrase=True)
@@ -512,7 +510,6 @@ def test_report_configs_ship_v3():
 
 def test_report_configs_ship_v2():
     """When ship=v2 (phrase=False): B1 has phrase=False; v1 row has phrase=False; other=v3."""
-    import dataclasses
     from cadence import evaluate as E
     from cadence.benchmark import report_configs
     ship = E.Config()  # v2

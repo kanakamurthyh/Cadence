@@ -1,13 +1,22 @@
 name: rerun-check
 on: [push, pull_request]
+concurrency:
+  group: rerun-check-${{ github.ref }}
+  cancel-in-progress: true
+env:
+  PYTHONHASHSEED: "0"
 jobs:
   reproducible:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
       - run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: uv sync --frozen --extra dev
+      - name: Lint (ruff)
+        run: uv run ruff check cadence scripts tests
       - run: uv run pytest -q
       - name: Byte-identical reruns on the demo clips
         run: uv run python scripts/rerun_check.py

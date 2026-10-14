@@ -7,8 +7,17 @@ from pathlib import Path
 
 import numpy as np
 
-from .envelope import (CHANNELS, ENV_FEATURES, FLAW_TYPES, PHRASE_FEATURES, Envelope,
-                       add_derived, by_type, deviations, with_phrases)
+from .envelope import (
+    CHANNELS,
+    ENV_FEATURES,
+    FLAW_TYPES,
+    PHRASE_FEATURES,
+    Envelope,
+    add_derived,
+    by_type,
+    deviations,
+    with_phrases,
+)
 from .features import UNITS
 
 DIMENSION = {  # flaw type -> rubric dimension
@@ -41,7 +50,7 @@ class Params:
         Path(path).write_text(json.dumps(asdict(self), indent=1, sort_keys=True))
 
     @classmethod
-    def load(cls, path: str | Path) -> "Params":
+    def load(cls, path: str | Path) -> Params:
         return cls(**json.loads(Path(path).read_text()))
 
 

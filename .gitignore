@@ -4,7 +4,9 @@ __pycache__/
 .pytest_cache/
 .DS_Store
 data/raw/
-data/refs/
+# reference audio stays local; the per-reading feature JSONs and selection.json are
+# committed so `cadence analyze`, the demo and the CI rerun check work from a fresh clone
+data/refs/*/*.wav
 data/ladders/
 data/listening/
 data/rankings/

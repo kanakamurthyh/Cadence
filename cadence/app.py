@@ -209,8 +209,8 @@ def demo_intro() -> str:
     if not d:
         return "Run `uv run cadence demo` to select the demo case from computed results."
     lab = d["label"]
-    from .labels import EDIT
     from .inject import SEVERITY
+    from .labels import EDIT
     sub = lab.get("subtype")
     key = f"pace_{sub}" if lab["type"] == "pace" else lab["type"]
     edit = EDIT[key].format(p=SEVERITY[key][lab["severity"] - 1])

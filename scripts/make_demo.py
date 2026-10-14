@@ -8,14 +8,10 @@ data/demo/style_pair.json: two good T2 readers who pause in different places;
     lists what the single-reference baseline and the envelope flag on each.
 """
 import json
-from pathlib import Path
-
-import numpy as np
 
 from cadence import audio, inject
-from cadence.data.texts import TEXTS
 from cadence.detect import detect
-from cadence.evaluate import Config, envelope_for, record, selection
+from cadence.evaluate import envelope_for, record, selection
 from cadence.pipeline import REFS, ROOT, load_params, load_record
 
 DEMO = ROOT / "data" / "demo"

@@ -1,0 +1,29 @@
+{
+ "good": [
+  "lv17632_13_kerry_adams",
+  "lv17632_12_adrian_stephens",
+  "lv17632_06_bruce_kachuk",
+  "lv17632_10_matthew_mcnaughton",
+  "lv17632_14_david_lawrence",
+  "lv17632_03_algy_pug"
+ ],
+ "ranking": [
+  "lv17632_13_kerry_adams",
+  "lv17632_12_adrian_stephens",
+  "lv17632_06_bruce_kachuk",
+  "lv17632_10_matthew_mcnaughton",
+  "lv17632_14_david_lawrence",
+  "lv17632_03_algy_pug",
+  "lv17632_04_patrick_randall",
+  "lv17632_08_newgatenovelist",
+  "lv17632_07_triciag",
+  "lv17632_15_patrick_wallace",
+  "lv17632_11_greg_giordano",
+  "lv17632_01_kevins",
+  "lv17632_16_leesalter",
+  "lv17632_05_larry_wilson",
+  "lv17632_02_lee_ann_howlett",
+  "lv17632_09_krista_zaleski"
+ ],
+ "method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking"
+}

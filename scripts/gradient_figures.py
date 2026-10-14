@@ -463,7 +463,6 @@ def fig_label_timing(
     import matplotlib
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
-    import numpy as np
 
     _apply_style(None)
 

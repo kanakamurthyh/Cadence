@@ -1,0 +1,25 @@
+{
+ "good": [
+  "saa_bengali6",
+  "saa_tamil2",
+  "saa_marathi1",
+  "saa_malayalam2",
+  "saa_telugu2",
+  "saa_tamil5"
+ ],
+ "ranking": [
+  "saa_bengali6",
+  "saa_tamil2",
+  "saa_marathi1",
+  "saa_malayalam2",
+  "saa_telugu2",
+  "saa_tamil5",
+  "saa_hindi2",
+  "saa_telugu1",
+  "saa_marathi2",
+  "saa_hindi1",
+  "saa_malayalam1",
+  "saa_bengali9"
+ ],
+ "method": "PROVISIONAL: mean aligner confidence; replace with the 3-teammate ranking"
+}

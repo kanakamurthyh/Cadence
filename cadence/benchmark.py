@@ -300,7 +300,7 @@ def markdown(o: dict) -> str:
                                               f"{_f(pt['precision_edit'], True)} (n={pt['predictions']})")
         L.append(f"| {typ} | " + " | ".join(cells) + " |")
     if o.get("equal_fa"):
-        L += [f"\n### Matching Score at equal false-alarm budgets (best sweep point at or below the budget)\n",
+        L += ["\n### Matching Score at equal false-alarm budgets (best sweep point at or below the budget)\n",
               "| Text | Method | <= 0.25/min | <= 0.5/min | <= 1/min | <= 2/min |", "|---|---|---|---|---|---|"]
         for t, per in o["equal_fa"].items():
             for n, v in per.items():

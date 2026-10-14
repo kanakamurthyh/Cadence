@@ -14,8 +14,7 @@ import csv
 import hashlib
 import json
 import random
-from datetime import datetime, timezone
-from pathlib import Path
+from datetime import UTC, datetime
 
 import gradio as gr
 import numpy as np
@@ -74,6 +73,7 @@ def _wav(cid: str) -> str:
 def _segment_files(trial: dict) -> tuple[str, str]:
     """Play only the flawed region (+-2 s) of both clips so a trial takes ~20 s."""
     import soundfile as sf
+
     from .audio import SR
     man = {c["id"]: c for c in json.loads((LADDERS / CALIB / "manifest.json").read_text())}
     out = LISTEN / "segments"
@@ -126,7 +126,7 @@ def save_response(name, i, rating):
         if new:
             w.writerow(RESPONSE_FIELDS)
         w.writerow([_norm(name), t["clip"], t["type"], t["level"], int(rating), ladder_source(),
-                    datetime.now(timezone.utc).isoformat(timespec="seconds")])
+                    datetime.now(UTC).isoformat(timespec="seconds")])
 
 
 def perceived_by_level() -> dict[tuple[str, int], float]:
@@ -170,6 +170,7 @@ def summarize_listening() -> dict:
 
 def reader_excerpts(tid: str) -> list[tuple[str, str]]:
     import soundfile as sf
+
     from .audio import SR
     out = RANK / "excerpts" / tid
     out.mkdir(parents=True, exist_ok=True)
