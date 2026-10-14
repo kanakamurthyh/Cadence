@@ -2,6 +2,32 @@
 from __future__ import annotations
 
 
+def test_robustness_wrong_word_coverage():
+    """Every test text (except T5) has a WRONG_WORD entry with a word present in the text."""
+    import importlib.util
+    from pathlib import Path
+    from cadence.data.texts import TEXTS
+
+    # Load robustness.py dynamically to access WRONG_WORD
+    robustness_path = Path(__file__).parent.parent / "scripts" / "robustness.py"
+    spec = importlib.util.spec_from_file_location("robustness", robustness_path)
+    robustness = importlib.util.module_from_spec(spec)
+    # Don't execute the module body (there's an if __name__ guard)
+    spec.loader.exec_module(robustness)
+
+    # Find all test texts (except T5)
+    test_texts = {tid: v for tid, v in TEXTS.items()
+                  if (v["role"].startswith("test") or v["role"] == "calibration") and tid != "T5"}
+
+    wrong_word = robustness.WRONG_WORD
+
+    for tid in test_texts:
+        assert tid in wrong_word, f"Text {tid} must have a WRONG_WORD entry"
+        word, _substitute = wrong_word[tid]
+        text = TEXTS[tid]["text"]
+        assert word in text, f"WRONG_WORD[{tid}][0] = {word!r} not found in text {tid}"
+
+
 def _run(ms, fa) -> dict:
     """Minimal E.run()-shaped result for ship_decision tests."""
     return {"ladders": {"matching_score": ms}, "fa_per_min_good_pairs": fa}

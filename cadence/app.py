@@ -197,7 +197,7 @@ def ab_play(choice, state):
 
 # -- demo -------------------------------------------------------------------------
 
-DEMO_TID = "T4"
+DEMO_TID = "T3"
 
 
 def demo_case() -> dict | None:

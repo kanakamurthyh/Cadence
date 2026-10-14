@@ -1,0 +1,62 @@
+{
+ "text_id": "T3",
+ "clip_id": "T3_pace-rushed_s0_L4",
+ "flawed_wav": "data/demo/demo_T3_flawed.wav",
+ "source_id": "lv8387_07_laurie_anne_walden",
+ "source_wav": "data/demo/demo_T3_reference.wav",
+ "source_speaker": "Laurie Anne Walden",
+ "source_licence": "Public domain (LibriVox; Public Domain Mark 1.0)",
+ "label": {
+  "type": "pace",
+  "severity": 4,
+  "w0": 125,
+  "w1": 128,
+  "subtype": "rushed",
+  "param": 0.62,
+  "start": 46.295,
+  "end": 47.0266
+ },
+ "label_words": "that we here highly",
+ "methods": {
+  "B0 generic norms": {
+   "matched": false,
+   "iou": 0.0,
+   "region": {
+    "type": "pace",
+    "start": 0.2156,
+    "end": 2.3756,
+    "w0": 0,
+    "w1": 7,
+    "d_mean": 1.0
+   },
+   "types_overlapping_label": [],
+   "n_flags": 19
+  },
+  "B1 single reference (K=1)": {
+   "matched": false,
+   "iou": 0.0,
+   "region": null,
+   "types_overlapping_label": [],
+   "n_flags": 0
+  },
+  "B2 consensus envelope (K=all)": {
+   "matched": true,
+   "iou": 0.975,
+   "region": {
+    "type": "pace",
+    "start": 46.2856,
+    "end": 47.0356,
+    "w0": 125,
+    "w1": 128,
+    "d_mean": 0.7682482531213093
+   },
+   "types_overlapping_label": [
+    "pace"
+   ],
+   "n_flags": 1
+  }
+ },
+ "b2_flags_on_untouched_source": [],
+ "candidates_considered": 16,
+ "selection_rule": "rushed pace if B2 matches it; else first of pace, monotone, missed_emphasis, misplaced_pause, missing_pause, volume_fade; prefer cases the baselines miss; then higher IoU"
+}

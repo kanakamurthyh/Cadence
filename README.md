@@ -103,8 +103,7 @@ on T6, B1 scores 15% and B2 5%. The dashboard therefore offers B1 as a calibrate
 | Volume fade, missing pause, monotone | 10–40% |
 | Missed emphasis | Not detected in v2 |
 
-**Demo** (`cadence demo`, Demo tab): a rushed-pace edit on T4 is found by B2 with IoU 0.97
-(onset error 8 ms). B1 misses it, and B0 smears it over 6.8 s.
+**Demo** (`cadence demo`, Demo tab): a rushed-pace edit on T3 (Gettysburg closing: "that we here highly") is found by B2 with IoU 0.975, detecting 1 flag. B1 misses it, and B0 raises 19 flags none matching.
 
 ## Evidence
 

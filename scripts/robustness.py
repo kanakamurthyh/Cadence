@@ -26,7 +26,8 @@ from cadence.metrics import aggregate, score_clip  # noqa: E402
 from cadence.pipeline import ROOT, load_params, measure  # noqa: E402
 
 WRONG_WORD = {"T2": ("queer", "strange"), "T3": ("hallow", "hollow"), "T4": ("Liberty", "freedom"),
-              "T1": ("whetted", "sharpened"), "T6": ("Triumph", "Victory")}
+              "T1": ("whetted", "sharpened"), "T6": ("Triumph", "Victory"),
+              "T7": ("spoons", "forks"), "T8": ("blossom", "flower")}
 ALL_CONDS = ["clean", "noise_20", "noise_10", "mp3_64k", "telephone_band", "wrong_word"]
 TID, LAD, WRONG = None, None, None
 
@@ -60,8 +61,13 @@ def _one(args):
     cond, c, tid = args
     global TID, LAD, WRONG
     TID, LAD = tid, ROOT / "data" / "ladders" / tid
-    a, b = WRONG_WORD[tid]
-    WRONG = TEXTS[tid]["text"].replace(a, b, 1)
+    entry = WRONG_WORD.get(tid)
+    WRONG = None
+    if entry:
+        a, b = entry
+        WRONG = TEXTS[tid]["text"].replace(a, b, 1)
+    elif cond == "wrong_word":
+        raise ValueError(f"No WRONG_WORD entry for {tid}")
     import torch
     torch.set_num_threads(2)
     x = audio.read_wav(LAD / f"{c['id']}.wav")
