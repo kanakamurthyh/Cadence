@@ -71,7 +71,8 @@ Individual steps:
 | **T7** | Speech Accent Archive "Please call Stella": 12 India-born speakers, 2 each with Hindi, Bengali, Telugu, Tamil, Marathi, Malayalam L1 | 12 | **Held out, Indian-accented English**; CC BY-NC-SA 4.0, separate subset |
 | **T8** | Tagore, *Fruit-Gathering* XVIII. LibriVox project 17632 | 16 | **Held out, Indian-authored text**; public domain |
 
-T7 and T8 were added after detector v3 was designed; each was evaluated once. Licences in
+T7 and T8 were added after detector v3 was designed; each was evaluated once, as inputs to the
+pre-registered v3/v2 ship choice. Licences in
 [`docs/DATA_LICENSING.md`](docs/DATA_LICENSING.md). TED/TEDx (CC BY-NC-ND) is listed as
 candidates only.
 
@@ -109,7 +110,10 @@ operating point, so FA differs between columns; the equal-FA comparison is the b
 - **Dataset v3 fixed missed-emphasis evaluation.** Ladders had targeted stress points the
   detector cannot see. With targets restricted to perceptible consensus stress, B2 emphasis
   recall is 60 / 20 / 0 / 20% on T2 / T3 / T4 / T6 (0% on T3, T4 and T6 before). B2 rose on every
-  development text: T2 40→44%, T3 30→35%, T4 35→40%, T6 23→27%.
+  development text: T2 40→44%, T3 30→35%, T4 35→40%, T6 23→27%. This is not a pure ablation: a
+  side effect of the v3 rule (a skipped random draw) also re-drew the rushed-pace span on T3/T4/T6
+  and 15 compound clips, so part of the gain (e.g. B2 pace recall T3 50→60%, T4 60→70%) comes
+  from new spans. Documented in `data/DATA_CARD.md`; an RNG-neutral rebuild is pending.
 - **Detector v3 (phrase channels) lost the pre-registered ship rule** (`benchmark.ship_decision`:
   beat v2 on T1 and on ≥ 2 non-calibration texts, T2–T8; T3 and T4 share readers, so they could
   jointly have supplied both wins). T1: 38% vs 40%; it won only T8 (38% vs 28%). v2 ships;
@@ -132,6 +136,7 @@ T6 45→23%, T7 39→22%).
 
 **Demo** (`cadence demo`, Demo tab): a rushed-pace edit (severity 4) on T3, "that we here
 highly", is found by B2 with IoU 0.975 and 1 flag. B1 misses it; B0 raises 19 flags, none matching.
+The span comes from the dataset-v3 draw.
 
 ## Evidence
 

@@ -4,17 +4,17 @@ Track C, Contrastive Speech Analytics · technical report (max 6 pages)
 
 ## 1. Problem and claim
 
-Competitive speakers get vague and inconsistent delivery feedback. Human raters of oratory
+Speakers get vague, inconsistent delivery feedback. Human raters of oratory
 agree poorly (ICC 0.03–0.38 in 3MT_French; ρ = 0.47 in APSA). Existing tools judge against
 generic norms, such as PowerPoint Speaker Coach's 100–165 wpm, or against a reference text
 (Azure). Neither can tell a stylistic choice from a flaw.
 
 Cadence flags a word only when the attempt leaves the range spanned by **several** strong
-renditions of the same text, and explains each flag in measured units.
+renditions of the same text, and explains flags in measured units.
 
 The claim we test is modest: compared with a single reference, the envelope should find more
 injected flaws at an equal false-alarm rate on good-vs-good pairs. We report every result,
-including the ones that do not support it. Numbers below come from files in the repository, named next to
+including negative ones. Numbers below come from files in the repository, named next to
 them; the v2 diagnosis figures in §3 are carried over from the v2 analysis.
 
 ## 2. Dataset construction
@@ -35,28 +35,25 @@ clean-reference and null-edit rows.
 | **T7** SAA "Please call Stella" | 12 India-born speakers | **Held out** (Indian-accented English) |
 | **T8** Tagore, *Fruit-Gathering* XVIII | 16 LibriVox | **Held out** (Indian-authored text) |
 
-**Indian-speaker texts.** A source survey (`reports/Indian speech dataset sources.md`) found
-the Speech Accent Archive (GMU) to be the only large pool of Indian speakers reading one
-identical text. T7 takes 2 India-born speakers each with Hindi, Bengali, Telugu, Tamil,
+**Indian-speaker texts.** A source survey found the Speech Accent Archive (GMU) to be the only
+large identical-text pool of Indian speakers. T7 takes 2 India-born speakers each with Hindi, Bengali, Telugu, Tamil,
 Marathi and Malayalam as L1 (speaker table in `data/DATA_CARD.md`). LibriVox's Tagore XVIII
 gives 16 public-domain readings of an Indian-authored text, but its readers are **not
 confirmed Indian-accented**, and several also read T1–T4 (`data/inventory.json`). Both texts
-were added after detector v3 was designed and were evaluated once.
+were added after detector v3 was designed; each was evaluated once, as inputs to the
+pre-registered v3/v2 ship choice.
 
 **Licences.** LibriVox audio is public domain (PDM 1.0); the FDR original is a US federal work.
 T7 is CC BY-NC-SA 4.0 (accent.gmu.edu/howto), so it and every clip derived from it form a
 separate non-commercial, share-alike subset. TED/TEDx (CC BY-NC-ND) is candidates only.
 
-**Speaker overlap.** No reader in T1's good set appears in any test text (`cadence inventory`).
-
 **Preparing each reading.**
 - Decode with ffmpeg to 16 kHz mono at −23 LUFS.
-- Locate the passage with wav2vec2 greedy transcription, matched on letters so accented or
-  misheard speech still counts.
+- Locate the passage with wav2vec2 transcription, matched on letters (robust to accents).
 - Force-align the known transcript; snap word edges to silences.
 
 **Good set.** Top 6 per text, **provisionally ranked by aligner confidence**; the 3-rater human
-ranking is pending. For T7 this ranking is itself accent-sensitive: an English aligner picked
+ranking is pending. No T1 good-set reader appears in any test text. For T7 this ranking is itself accent-sensitive: an English aligner picked
 Bengali, Tamil (2), Marathi, Malayalam and Telugu speakers, and **no Hindi speaker**
 (`data/refs/T7/selection.json`).
 
@@ -79,7 +76,10 @@ only perceptible stress (≥ 1.5 st or ≥ 1 dB, 't Hart et al. 1990) and zeroes
 targets were therefore invisible to it by construction: B2 emphasis recall was 0% on T3, T4 and
 T6 and 30% on T2 (`results/frozen_v2_2026-10-14/results.md`). Dataset v3 places targets only
 where ≥ ¾ of good readers peak perceptibly. T3 has 2 such spans, T1/T2/T4/T6 have 1, and T7/T8
-have none, so they carry no emphasis clips (`data/ladders/<T>/manifest.json`). Per text:
+have none, so they carry no emphasis clips (`data/ladders/<T>/manifest.json`). **Side effect
+(known issue):** under the v3 rule a probe draw is skipped, shifting the random stream, so v3
+also re-drew the rushed-pace span on T3, T4 and T6 and 15 compound clips (`data/DATA_CARD.md`).
+Per text:
 T1 63, T2 65, T3 70, T4 65, T6 65, T7 55, T8 60 clips.
 
 **Controls.** Every clip, clean ones included, goes through the same PSOLA resynthesis. The
@@ -116,7 +116,7 @@ analysis, not re-measured on dataset v3):
 1. **Self-relative pace and monotone channels.** Good readers' overall tempo differs by up to
    1.8×, so the absolute rate envelope was 0.85 log2 wide and a severity-5 rush stuck out by
    only 0.21. Relative to each reader's median the width is 0.31 and the rush sticks out by
-   0.61. Absolute channels remain, so whole-speech rushing is still caught.
+   0.61.
 2. **Perceptible stress points.** Only peaks ≥ 1.5 st or ≥ 1 dB count.
 3. **Rubric λ pooled across dimensions** (per-dimension fits from tiny detections exploded).
 
@@ -129,18 +129,16 @@ region is trimmed to the words that themselves deviate. Available as `Config(phr
 silence for pauses. The dominant feature names the flaw.
 
 **Severity and scores.** Isotonic map from d to severity, fitted on T1 (to perceived severity
-once the listening test exists). Score = 10·exp(−λ Σ d̄·dur/T).
-
-**Explanations.** Templates filled with measured values only; no language model.
+once the listening test exists). Score = 10·exp(−λ Σ d̄·dur/T). Explanations are templates
+filled with measured values; no language model.
 
 **Calibration (T1 only).** One τ per flaw type by coordinate ascent: maximize T1 Matching Score
-subject to ≤ 1 false alarm/min on good-vs-good pairs. B1 gets its own τ by the same rule.
-Nothing is retuned on any other text.
+subject to ≤ 1 false alarm/min on good-vs-good pairs. B1 gets its own τ by the same rule;
+nothing is retuned elsewhere.
 
 **Pre-registered ship rule.** Before evaluation we coded the choice between v3 and v2 as a
 tested function, `benchmark.ship_decision`: v3 ships only if it beats v2 on T1 **and** on ≥ 2
-non-calibration texts (T2–T8), without exceeding 2 FA/min on a text where v2 stays under it. The winner's
-parameters are saved automatically. T3 and T4 share readers, so they could jointly have
+non-calibration texts (T2–T8), without exceeding 2 FA/min on a text where v2 stays under it. T3 and T4 share readers, so they could jointly have
 supplied both wins; the rule does not correct for that.
 
 ## 4. Results
@@ -173,8 +171,9 @@ so FA differs; the equal-FA table follows.
 | **T7 (held out)** | 22% / 25.3 | 22% / 3.38 | **27% / 2.11** | — |
 | **T8 (held out)** | 10% / 14.5 | 28% / 2.47 | 28% / 2.28 | — |
 
-"Before" is `results/frozen_v2_2026-10-14/results.md`. The gain comes from the emphasis fix:
-B2 emphasis recall is now 60 / 20 / 0 / 20% on T2 / T3 / T4 / T6.
+"Before" is `results/frozen_v2_2026-10-14/results.md`. The gain combines the emphasis fix
+(B2 emphasis recall now 60 / 20 / 0 / 20% on T2 / T3 / T4 / T6) with the re-drawn pace and compound
+spans (B2 pace recall on T3/T4 rose 50→60% and 60→70%), so it is not a pure ablation.
 
 **Equal false-alarm budget** (best sweep point at or below the budget, B1 vs B2):
 
@@ -206,15 +205,14 @@ every test text except T6 (0.48 vs 0.49).
 (T2–T8), at the aligner's floor (MFA reports 24 ms).
 
 **Null-edit controls** (Figure 3). B2's FA on PSOLA-resynthesised but unedited clips never
-exceeds its good-pair FA by more than 0.15/min (T3 1.62 vs 1.47; T4 0.24 vs 0.24; lower on
-T6–T8); the detector does not react to processing. Flags on ladders outside labels are mostly the source
+exceeds its good-pair FA by more than 0.15/min (T3 1.62 vs 1.47); processing alone
+does not trigger flags. Flags on ladders outside labels are mostly the source
 reader's own style; counted once per clip, the edit-attributable rate is 0–0.35/min, except
 T7 at 1.77/min.
 
 **Ablations** (MS T2 / T3 / T4 / T6 / T7 / T8): K = 1: 33 / 22 / 29 / 29 / 22 / 28%; K = 4:
 40 / 28 / 33 / 31 / 31 / 24%; K = all (B2): 44 / 35 / 40 / 27 / 27 / 28%. More references help on
-T2–T4; K = 4 beats K = all on T6 and T7. z-score normalization (v1):
-25 / 28 / 29 / 29 / 18 / 30%. Compound clips, B2: 88 / 50 / 50 / 25 / 62 / 62%.
+T2–T4; K = 4 beats K = all on T6 and T7. Compound clips, B2: 88 / 50 / 50 / 25 / 62 / 62%.
 
 **Robustness** (B2, severities 3 and 5; `results/robustness_T4.json`, `_T6`, `_T7`):
 
@@ -227,11 +225,11 @@ T2–T4; K = 4 beats K = all on T6 and T7. z-score normalization (v1):
 | Noise 20 dB SNR | 45% | 41% | 33% |
 | Noise 10 dB SNR | 32% | 23% | 22% |
 
-22 labels on T4 and T6, 18 on T7, so one label moves MS by 5–6 points.
+With 18–22 labels per text, one label moves MS by 5–6 points.
 
 **Demo** (`data/demo/demo_T3.json`). T3 rushed pace, severity 4, "that we here highly": B2 finds
-it with IoU 0.975 and 1 flag; B1 raises nothing; B0 raises 19 flags, none matching. The Demo tab
-reruns this detection live.
+it with IoU 0.975 and 1 flag; B1 raises nothing; B0 raises 19 flags, none matching. This span
+comes from the v3 re-draw.
 
 **Reproducibility.** A from-scratch rebuild (fetch → refs → ladders) reproduced all 371
 dataset-v2 label rows with identical clip ids and timestamps. 29 rows' measured effect sizes
@@ -258,7 +256,7 @@ hash and reruns byte-identically (`scripts/rerun_check.py`, CI). Environment: `u
 - **The envelope is not universally better.** On T6 and T8, B1 matches or beats B2 at tight
   false-alarm budgets, so the dashboard ships B1 as a calibrated fallback.
 - **T2–T6 are development data.** All of them informed v2 or the v3 dataset decision; only T7
-  and T8 are fresh, and each was evaluated once.
+  and T8 are fresh; each was evaluated once, as an input to the v3/v2 ship choice.
 - **Indian-speaker caveats.** T7's good set was chosen by an English aligner's confidence and
   contains no Hindi speaker. T8's readers are not confirmed Indian-accented. T7 has no
   emphasis clips and only 18 robustness labels.

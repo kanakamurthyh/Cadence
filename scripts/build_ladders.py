@@ -34,7 +34,8 @@ def plan(tid: str, dataset: int = 3) -> list[dict]:
 
     dataset=3 (default): emphasis targets perceptible consensus stress points
     (stress_rule=2, perceptible mask).  dataset=2: legacy behaviour (any
-    positive prominence, stress_rule=1) — reproduces byte-for-byte.
+    positive prominence, stress_rule=1) — labels and audio reproduce (manifests
+    now also carry dataset_version).
     """
     good = good_set(tid)
     top = good[0]
@@ -120,7 +121,7 @@ if __name__ == "__main__":
     ap.add_argument("--workers", type=int, default=5)
     ap.add_argument("--dataset", type=int, choices=[2, 3], default=3,
                     help="Dataset version: 3 (default) targets perceptible consensus stress points; "
-                         "2 reproduces the legacy behaviour byte-for-byte.")
+                         "2 reproduces the legacy labels and audio (manifests now also carry dataset_version).")
     a = ap.parse_args()
     jobs = []
     from cadence.data.texts import MIN_GOOD

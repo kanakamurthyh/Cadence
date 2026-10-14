@@ -36,13 +36,12 @@ def _analyzable(tid: str) -> bool:
         return False
 
 
-# Analyze offers the speeches first (T3 by default: the more reliable of T3/T4 in every
-# evaluation), research texts on request, and only texts with an envelope (T5 waits for takes)
+# Analyze offers the speeches first (T4 by default, see DEFAULT_CHOICE), research texts on request, and only texts with an envelope (T5 waits for takes)
 SPEECH_CHOICES = [c for c in TEXT_CHOICES if c.split(":")[0] in SPEECHES and _analyzable(c.split(":")[0])]
 RESEARCH_CHOICES = [c for c in TEXT_CHOICES if c.split(":")[0] not in SPEECHES and _analyzable(c.split(":")[0])]
 ANALYZE_CHOICES = SPEECH_CHOICES + RESEARCH_CHOICES
 # T4 by default: under the shipped (v2) detector it gives good speakers the fewest false flags
-# (0.24/min vs 1.47 for T3) with the higher Matching Score (35% vs 30%); see results/results.md
+# (0.24/min vs 1.47 for T3) with the higher Matching Score (40% vs 35%); see results/results.md
 DEFAULT_CHOICE = next(c for c in SPEECH_CHOICES if c.startswith("T4"))
 PENDING = [f"{t}: {TEXTS[t]['title']}" for t in SPEECHES if not _analyzable(t)]
 

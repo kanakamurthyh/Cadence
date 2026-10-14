@@ -37,8 +37,8 @@ in two subsets with different licences: `public_domain` (T1–T6, T8; LibriVox a
 | T4 | Gettysburg Address, opening paragraph | Same 19 readings as T3 | Development test (oratory); **not independent of T3** (same readers), none shared with calibration |
 | T5 | FDR "Day of Infamy", opening | FDR original + 1 LibriVox | **Blocked** until ≥ 4 renditions |
 | T6 | Kipling, *If—*, first two stanzas | 17 LibriVox (15 before the 2026-10-14 rebuild, when 2 downloads failed) | Test; used once for v2, so no longer untouched; no speaker shared with any text |
-| T7 | SAA "Please Call Stella" elicitation | 12 Speech Accent Archive (India-born speakers) | **Held-out Indian-speaker test (Speech Accent Archive)**: added 2026-10-14 after detector v3 was designed; evaluated once; never used for calibration |
-| T8 | Tagore *Fruit-Gathering* XVIII | 16 LibriVox (project 17632) | **Held-out Indian-authored text** (readers not confirmed Indian-accented): added 2026-10-14 after detector v3 was designed; evaluated once; never used for calibration |
+| T7 | SAA "Please Call Stella" elicitation | 12 Speech Accent Archive (India-born speakers) | **Held-out Indian-speaker test (Speech Accent Archive)**: added 2026-10-14 after detector v3 was designed; evaluated once, as an input to the v3/v2 ship choice; never used for calibration |
+| T8 | Tagore *Fruit-Gathering* XVIII | 16 LibriVox (project 17632) | **Held-out Indian-authored text** (readers not confirmed Indian-accented): added 2026-10-14 after detector v3 was designed; evaluated once, as an input to the v3/v2 ship choice; never used for calibration |
 
 No speaker in T1's good set (the only T1 audio calibration uses) appears in any test text.
 `cadence inventory` checks this.
@@ -128,6 +128,15 @@ audio share processing artifacts.
 
 Under v3, T3 has 2 emphasis spans, T1/T2/T4/T6 have 1, and T7/T8 have none (the injector found no
 eligible perceptible consensus stress point), so T7 and T8 carry no missed-emphasis clips.
+
+**Known issue: v3 also changed other spans.** In `cadence/inject.py::choose_spans`, rule 2
+short-circuits a probe `pick()` (which shuffles the random generator), so the RNG stream shifts
+for later draws. Compared with v2 manifests, v3 re-drew the rushed-pace span on T3 (words
+115–120 → 125–128), T4 (86–90 → 82–85) and T6 (23–27 → 24–27), and re-drew compound clips
+(T1 1, T2 4, T3 2, T4 4, T6 4). The demo case `T3_pace-rushed_s0_L4` is one of the re-drawn
+spans. v2 → v3 result differences therefore combine the emphasis rule with these re-draws.
+Planned fix: run the probe draw regardless of the rule, so only emphasis targets change;
+then rebuild ladders and re-evaluate.
 A from-scratch rebuild of v2 (fetch → refs → ladders) reproduced all 371 v2 label rows with
 identical clip ids and timestamps; 29 rows' measured effect values differed by
 floating-point drift (median 1.4 %, max 21 %); see `results/rebuild_check_2026-10-14.md`.

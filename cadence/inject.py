@@ -259,7 +259,10 @@ def choose_spans(words, feats, stress, rng, n=2, others_pause=None, rule: int = 
                                  and (rule < 2 or min(words[i]["end"] - words[i]["start"],
                                                       words[i + 1]["end"] - words[i + 1]["start"]) >= 0.15)
                                  and pause[i + 1] == 0], n),
-        "missed_emphasis": pick(stress_c, n),  # drawn last: earlier spans do not depend on it
+        # Drawn last, but NOT RNG-neutral: under stress_rule 2 the probe pick() above is skipped
+        # (short-circuit), which shifts the RNG stream for every later draw (rushed-pace and
+        # compound spans differ from dataset 2). Known issue, documented in data/DATA_CARD.md.
+        "missed_emphasis": pick(stress_c, n),
     }
 
 

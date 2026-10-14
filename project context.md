@@ -148,7 +148,7 @@ beats B1 on T2–T4 and T7, ties T8 and loses T6 (27 vs 29%). Missed emphasis is
 | Listening-test and reader-ranking tools (`cadence human`) | Built; **no human data yet** |
 | Human-data import: perceived-severity calibration, natural takes (`cadence natural`), `cadence status`, `cadence compare` | Done and fixture-tested; awaiting real data |
 | Frozen results for comparison | `results/baseline_2026-10-13/`, `results/frozen_v1_2026-10-14/`, `results/frozen_v2_2026-10-14/` |
-| Technical report (2,798 words + 4 figures), data card, README | Done for dataset v3 |
+| Technical report (2,797 words + 4 figures), data card, README | Done for dataset v3 |
 | Reproducibility | From-scratch rebuild reproduced all 371 v2 label rows' clip ids and timestamps; 29 rows' effect sizes drifted (median 1.4%, max 21%) — `results/rebuild_check_2026-10-14.md`; `rerun_check` passes; CI, Dockerfile, uv.lock |
 | GitHub repo | `main` public; this work is on branch `scoring-push` (worktree `Cadence-v3`), not pushed |
 | YouTube video, Devpost page | **Not done** (needs the team) |
@@ -172,7 +172,8 @@ evaluated once.
 
 - **Dataset v3 vs v2 (same detector):** B2 T2 40→44%, T3 30→35%, T4 35→40%, T6 23→27%
   (`results/frozen_v2_2026-10-14/results.md`). Missed-emphasis recall 60/20/0/20% on T2/T3/T4/T6
-  (was 30/0/0/0%).
+  (was 30/0/0/0%). Not a pure ablation: v3 also re-drew rushed-pace spans (T3/T4/T6) and compound
+  clips through an RNG side effect (see change log).
 - **Ship decision:** v3 vs v2 MS — T1 38 vs 40, T2 35 vs 44, T3 27 vs 35, T4 20 vs 40, T6 27 vs 27,
   T7 27 vs 27, T8 38 vs 28. v2 ships.
 - **Equal FA (≤ 1/min), B1 vs B2:** T2 33 vs 33, T3 22 vs 20, T4 29 vs 40, T6 16 vs 5, T7 11 vs 13,
@@ -287,9 +288,20 @@ memory pressure.
 - [ ] Confirm by listening whether any T8 (Tagore) reader is Indian-accented.
 - [ ] Confirm the Hugging Face audio upload finished (repo is public; upload was in progress during the docs pass).
 - [ ] YouTube video (3–10 min) and the Devpost page (Track C, all teammates).
+- [ ] Make the v3 emphasis rule RNG-neutral (always run the probe pick), rebuild ladders, re-evaluate.
 - [ ] Merge `scoring-push` into `main` and push (needs the user's go-ahead).
 
 ## 8. Change log
+
+- **2026-10-14 (session 10, final-review fix wave): disclosed the dataset-v3 RNG side effect (no rebuild, user's choice).**
+  - Cause: in `inject.choose_spans`, `stress_rule < 2 and len(pick(...)) < n` short-circuits under rule 2, so the probe
+    `pick()` (which shuffles the RNG) is skipped and later draws shift. Effect vs v2 manifests: rushed-pace span
+    re-drawn on T3 (115–120 → 125–128), T4 (86–90 → 82–85), T6 (23–27 → 24–27); compound clips re-drawn (T1 1, T2 4,
+    T3 2, T4 4, T6 4). The demo case `T3_pace-rushed_s0_L4` is a re-drawn span.
+  - Disclosed in DATA_CARD (version history), README and technical report: v2→v3 gains combine the emphasis fix with
+    re-drawn pace/compound spans; not a pure ablation. `inject.py` comment corrected (behaviour unchanged).
+  - Also: T7/T8 described as inputs to the pre-registered ship choice; `build_ladders.py` "byte-for-byte" wording
+    corrected; stale `app.py` comments fixed (T4 default; 40% vs 35%). Report 2,797 words; 51 tests pass.
 
 - **2026-10-14 (session 10, Task 8 fix round 1): judge-facing wording.**
   - DATA_CARD role table matches the README (T2–T4 development, T6 no longer untouched, T8 Indian-authored
@@ -320,7 +332,7 @@ memory pressure.
   - **Published** the dataset at https://huggingface.co/datasets/Vedant1605/cadence-contrastive-speech
     (subsets `public_domain`, `saa_indian_nc_sa`).
   - **Docs pass:** README (dataset link, v3 results, T7/T8 data table, reproduction commands), technical report
-    rewritten (2,798 words + 4 figures), DATA_CARD (v3, HF link, counts), this file. Fixed the misleading
+    rewritten (2,797 words + 4 figures), DATA_CARD (v3, HF link, counts), this file. Fixed the misleading
     `exec_module` comment in `tests/test_benchmark.py`.
 
 - **2026-10-14: Task 6 fix round 1 — data-driven titles; captions describe measurements (session 10).**
