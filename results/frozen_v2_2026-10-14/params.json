@@ -1,0 +1,62 @@
+{
+ "fitted_on": "T1 (K=all)",
+ "lam": {
+  "emphasis": 30.458975093204035,
+  "fluency": 30.458975093204035,
+  "pacing": 30.458975093204035,
+  "pausing": 30.458975093204035,
+  "pitch_variety": 30.458975093204035,
+  "volume": 30.458975093204035
+ },
+ "margin": {
+  "loud": 0.27600500000000006,
+  "pause": 0.0,
+  "pitch_range": 0.1885739013923461,
+  "pitch_range_rel": 0.19481653936220533,
+  "prom_loud": 0.4364999999999998,
+  "prom_pitch": 0.7790999999999998,
+  "rate": 0.017561922287443292,
+  "rate_rel": 0.018280256754938454
+ },
+ "relative_channels": true,
+ "scale": {
+  "loud": 6.3294999999999995,
+  "pause": 1.3785116232537298,
+  "pitch_range": 1.8151168894800056,
+  "pitch_range_rel": 1.112035582101781,
+  "prom_loud": 9.3737,
+  "prom_pitch": 6.018,
+  "rate": 0.8528631011674599,
+  "rate_rel": 0.3136903434157084
+ },
+ "sev_scale": "injected level 1-5 (provisional until the listening test)",
+ "sev_x": [
+  0.62862050204295,
+  0.631895306787911,
+  2.0061744128318826,
+  2.020903094317038,
+  2.0365116076651897,
+  2.888515835572928,
+  3.1762602138377605
+ ],
+ "sev_y": [
+  2.0,
+  3.9444444444444446,
+  3.9444444444444446,
+  4.0,
+  4.25,
+  4.25,
+  5.0
+ ],
+ "stress_floor": true,
+ "tau": {
+  "misplaced_pause": 2.0,
+  "missed_emphasis": 0.6,
+  "missing_pause": 1.5,
+  "monotone": 1.0,
+  "pace": 0.8,
+  "volume_fade": 1.0
+ },
+ "tau_high": 1.0,
+ "tau_low": 0.5
+}
