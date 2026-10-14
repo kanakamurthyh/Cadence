@@ -194,7 +194,16 @@ audio { width: 100%; }
 .passage .w { border-radius: 6px; transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease; }
 .passage .w.flag { background: var(--rose); color: var(--rose-deep); padding: 0 2px; }
 .passage.live .w { color: #7B8794; }
-.passage.live .w.flag { background: transparent; }
+.passage.live .w.flag { background: transparent; box-shadow: inset 0 -2px 0 var(--rose-deep); }
+.passage .w.guide, .passage.live .w.guide { background: var(--ok-tint); color: var(--ok-ink); padding: 0 2px; }
+.passage.live .w.guide.done { color: var(--ink); }
+.passage .pz { display: inline-block; width: 2px; height: 0.95em; margin: 0 3px 0 4px; vertical-align: -0.12em; border-radius: 2px; background: var(--ok); opacity: 0.7; }
+.modebar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; }
+.modebar .seg button:disabled { opacity: 0.55; cursor: not-allowed; }
+.modetag { display: inline-block; padding: 2px 9px; border-radius: 999px; background: var(--ok-tint); color: var(--ok-ink); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; }
+.modetag.test { background: var(--blue-tint); color: var(--blue-deep); }
+.gauge.testmode { background: var(--blue-tint); } .gauge.testmode .pace-h { color: var(--blue-deep); }
+.lg-guide { background: var(--ok-tint); } .lg-flag { box-shadow: inset 0 -2px 0 var(--rose-deep); } .lg-pz { width: 3px !important; background: var(--ok); opacity: 0.7; }
 .passage.live .w.done { color: var(--ink); }
 .passage.live .w.ghost { box-shadow: inset 0 -3px 0 var(--ok); }
 .passage.live .w.cur { color: var(--blue-deep); background: var(--blue-tint); padding: 0 3px; }

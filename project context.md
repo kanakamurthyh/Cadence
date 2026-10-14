@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: coach web app — record with mic permission, analyze, report)
+> Last updated: 2026-10-14 (session 10: coach web app — Practice and Test modes, live read-along)
 
 ## 1. What this project is
 
@@ -145,6 +145,7 @@ beats B1 on T2–T4 and T7, ties T8 and loses T6 (27 vs 29%). Missed emphasis is
 | Severity-gradient evidence figures | Done (`scripts/gradient_figures.py` → `docs/figures/`, `results/gradient.json`) |
 | Gradio dashboard (analyze, A/B, dataset explorer, evidence, Demo tab on T3) | Done |
 | FastAPI `POST /analyze`, CLI `cadence …` | Done |
+| Coach web app (`cadence web`, http://localhost:8000): mic permission → record → analyze → report; live read-along (Chrome speech recognizer); **Practice mode** (guide phrase, pause marks, tip at last report's weak spot, pace gauge) and **Test mode** (no hints, report tagged "Test") | Done; headless-tested with a fake mic and scripted recognizer, **not yet tested by a human with a real mic** |
 | Listening-test and reader-ranking tools (`cadence human`) | Built; **no human data yet** |
 | Human-data import: perceived-severity calibration, natural takes (`cadence natural`), `cadence status`, `cadence compare` | Done and fixture-tested; awaiting real data |
 | Frozen results for comparison | `results/baseline_2026-10-13/`, `results/frozen_v1_2026-10-14/`, `results/frozen_v2_2026-10-14/` |
@@ -282,7 +283,8 @@ memory pressure.
 
 ## 7. Pending / next steps
 
-- [ ] Test the coach web app with real users (mic flow, Safari/Firefox recording formats) and collect feedback.
+- [ ] Test the coach web app with real users (mic flow, Safari/Firefox recording formats, Practice vs Test modes) and collect feedback.
+- [ ] Consider the ideas in `reports/Speech delivery coaching methods.md` (main checkout, untracked): e.g. a cold Test → Practice → hot Test loop with side-by-side scores.
 - [ ] Web app: History/Trends needs ≥ 2 sessions; reports live in the browser (localStorage), A/B audio only until the server restarts.
 
 - [ ] Human reader ranking: 3 teammates rank all readings (`cadence human`), then `cadence refs && cadence ladders`, check with `cadence status`.
@@ -296,6 +298,17 @@ memory pressure.
 - [ ] Merge `scoring-push` into `main` and push (needs the user's go-ahead).
 
 ## 8. Change log
+
+- **2026-10-14 (session 10): Practice and Test modes in the web app.**
+  - Practice (default): the "read these now" guide highlights the current phrase at a typical good reader's pace;
+    teal marks show where the good readers pause (median gap ≥ 0.25 s, `web.PAUSE_S`, display only); the line
+    flagged in the latest report on that passage is underlined and the pace panel coaches it as you approach
+    ("Coming up: the line you rushed last time…"); pace gauge as before.
+  - Test: no guide, pause marks, flags or gauge; only your own position lights up. Sessions store `mode`;
+    reports and the report list show a Practice/Test tag. Mode is remembered in settings and locked while recording.
+  - `/api/texts` ghost timings gain `pause_after`; new test `test_ghost_pause_cues_are_inside_the_passage`. 56 tests pass.
+  - Deep research on how other products coach delivery: `reports/Speech delivery coaching methods.md` with notes in
+    `research_notes/Speech delivery coaching methods/` (main checkout, untracked).
 
 - **2026-10-14 (session 10, final-review fix wave): disclosed the dataset-v3 RNG side effect (no rebuild, user's choice).**
   - Cause: in `inject.choose_spans`, `stress_rule < 2 and len(pick(...)) < n` short-circuits under rule 2, so the probe

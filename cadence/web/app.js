@@ -350,17 +350,30 @@ async function viewPractice(params) {
   const last = sessions()[0];
   let tid = params.get("t") || (last && textById(last.report.text_id) ? last.report.text_id : (TEXTS.find((t) => t.id === "T4") || TEXTS[0]).id);
   let hw = params.has("w0") ? [Number(params.get("w0")), Number(params.get("w1"))] : null;
-  if (!hw && last && last.report.text_id === tid) { const r = topRegion(last.report); if (r) hw = [r.w0, r.w1]; }
+  /* Practice: a guide shows which words to read now and where good readers pause, and coaches the spot
+     flagged last time as you reach it. Test: no hints; only your own position lights up, and the report is marked "Test". */
+  let mode = settings().mode === "test" ? "test" : "practice";
+  let focus = null;  // top region of the latest report on this passage
+  const findFocus = () => {
+    const prev = sessions().find((s) => s.report.text_id === tid);
+    const r = prev && topRegion(prev.report);
+    focus = r ? { w0: r.w0, w1: r.w1, type: r.type, side: r.side } : null;
+    if (!hw) hw = focus ? [focus.w0, focus.w1] : null;
+  };
+  findFocus();
   let state = "permission", take = null, err = "";
+  const pausesOf = () => new Set(textById(tid).ghost.pause_after || []);
 
   /* The passage as one element per scored word (same tokenizer as the server: letters and apostrophes). */
   const passageWordsHTML = (t) => {
     let out = "", pos = 0, k = 0;
+    const pz = mode === "practice" ? pausesOf() : new Set();
     for (const m of t.display.matchAll(/[A-Za-z’']+/g)) {
       const core = m[0].replace(/^[’']+|[’']+$/g, "");
       if (!core) continue;
-      out += esc(t.display.slice(pos, m.index));
-      const flag = hw && k >= hw[0] && k <= hw[1] ? " flag" : "";
+      const gap = esc(t.display.slice(pos, m.index));  // a pause cue goes after the punctuation that ends the previous word
+      out += k && pz.has(k - 1) ? gap.replace(/^(\S*)/, '$1<span class="pz" title="Good readers pause here"></span>') : gap;
+      const flag = mode === "practice" && hw && k >= hw[0] && k <= hw[1] ? " flag" : "";
       out += `<span class="w${flag}" data-i="${k}">${esc(m[0])}</span>`;
       pos = m.index + m[0].length; k++;
     }
@@ -372,9 +385,13 @@ async function viewPractice(params) {
         <div><h2 id="h-passage" style="font-size:22px">${esc(t.title)}</h2><p class="meta">${esc(t.author)} · ${t.words} words · good readers take about ${fmtTime(t.typical_s)}</p></div>
         <label class="field">Passage<select id="passage">${TEXTS.map((x) => `<option value="${x.id}"${x.id === tid ? " selected" : ""}>${esc(x.title)}${x.group === "research" ? " (research)" : ""}</option>`).join("")}</select></label>
       </div>
-      <div class="live-legend" id="live-legend" hidden><span><i class="lg-you"></i>You</span><span><i class="lg-ghost"></i>A typical good reader</span><span><i class="lg-done"></i>Read</span></div>
+      <div class="modebar"><div class="seg" role="group" aria-label="Mode">${["practice", "test"].map((m) => `<button data-mode="${m}" aria-pressed="${mode === m}"${state === "recording" ? " disabled" : ""}>${m === "practice" ? "Practice" : "Test"}</button>`).join("")}</div>
+        <span class="meta">${mode === "practice" ? "Guided: read the green words as they light up, pause at the marks." : "No hints. Only your own words light up; the report counts as a test."}</span></div>
+      ${mode === "practice"
+        ? `<div class="live-legend"><span><i class="lg-guide"></i>Read these now</span><span><i class="lg-pz"></i>Good readers pause</span>${hw ? `<span><i class="lg-flag"></i>Flagged last time</span>` : ""}<span><i class="lg-you"></i>You</span></div>`
+        : `<div class="live-legend"><span><i class="lg-you"></i>You</span><span><i class="lg-done"></i>Read</span></div>`}
       <p class="passage" id="passage-text">${passageWordsHTML(t)}</p>
-      <p class="note">${ICON.info}<span>${hw ? "Highlighted: the line flagged last time. " : ""}Read the whole passage from its first word to its last; the title isn’t part of it.${t.context ? " " + esc(t.context) : ""}</span></p>`;
+      <p class="note">${ICON.info}<span>Read the whole passage from its first word to its last; the title isn’t part of it.${t.context ? " " + esc(t.context) : ""}</span></p>`;
   };
 
   /* ---- live read-along: Chrome's speech recognizer → position in the passage; ghost reader from good readers' timings ---- */
@@ -403,8 +420,7 @@ async function viewPractice(params) {
     follow.words = [...t.display.matchAll(/[A-Za-z’']+/g)].map((m) => norm(m[0])).filter(Boolean);
     Object.assign(follow, { base: 0, fin: 0, ptr: 0, voiceAt: 0, on: true, note: "" });
     $("#passage-text").classList.add("live");
-    $("#live-legend").hidden = false;
-    if (!SR) { follow.note = "Live word-following needs Chrome or Edge. Recording still works; the ghost reader shows a typical pace."; return; }
+    if (!SR) { follow.note = mode === "practice" ? "Live word-following needs Chrome or Edge. Recording still works; the guide still moves at a typical pace." : "Live word-following needs Chrome or Edge. Recording still works."; return; }
     const rec = new SR();
     rec.lang = "en-US"; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
     rec.onresult = (e) => {
@@ -438,8 +454,8 @@ async function viewPractice(params) {
     try { follow.rec?.stop(); } catch { /* not running */ }
     follow.rec = null;
     $("#passage-text")?.classList.remove("live");
-    $("#passage-text")?.querySelectorAll(".w").forEach((w) => w.classList.remove("done", "cur", "ghost"));
-    const lg = $("#live-legend"); if (lg) lg.hidden = true;
+    $("#passage-text")?.querySelectorAll(".w").forEach((w) => w.classList.remove("done", "cur", "ghost", "guide"));
+    if (mode === "practice" && $("#passage-text")) paintGuidePreview();
   }
   const LAG = 0.7;  // the recognizer reports a word ~0.7 s after it is spoken
   function paceNow() {
@@ -459,25 +475,44 @@ async function viewPractice(params) {
     ok: ["On pace", "Inside the range of the good readers."], fast: ["Faster than every good reader", "Ease off a little; let the words land."],
     slow: ["Slower than every good reader", "Keep going, a little quicker."],
   };
+  const FOCUS_TIP = {  // Practice: shown as you approach last time's weak spot
+    pace: (f) => (f.side > 0 ? "Coming up: the line you rushed last time. Slow down there." : "Coming up: the line you dragged last time. Keep it moving."),
+    missing_pause: () => "Coming up: you skipped a pause here last time. Take a breath at the mark.",
+    misplaced_pause: () => "Coming up: you paused mid-phrase here last time. Carry the line through.",
+    monotone: () => "Coming up: this line sounded flat last time. Let your voice rise and fall.",
+    missed_emphasis: () => "Coming up: lean on the key word in this line.",
+    volume_fade: () => "Coming up: your voice faded here last time. Keep it up to the end.",
+  };
+  /* The guide phrase: the words between the good readers' pauses around index i. */
+  function phraseAt(i) {
+    const pz = textById(tid).ghost.pause_after || [], n = textById(tid).ghost.median.length;
+    let a = 0, b = n - 1;
+    for (const p of pz) { if (p < i) a = p + 1; else { b = p; break; } }
+    return [a, b];
+  }
   function paintFollow() {
     const box = $("#passage-text"); if (!box || !follow.on) return;
-    const p = paceNow();
+    const p = paceNow(), guided = mode === "practice";
+    const [ga, gb] = guided ? phraseAt(Math.max(p.ghost, 0)) : [-1, -2];  // before you start, the first phrase
     box.querySelectorAll(".w").forEach((w) => {
       const i = Number(w.dataset.i);
       w.classList.toggle("done", SR && i < follow.ptr);
       w.classList.toggle("cur", SR && i === follow.ptr && follow.voiceAt > 0);
-      w.classList.toggle("ghost", i === p.ghost);
+      w.classList.toggle("ghost", guided && i === p.ghost);
+      w.classList.toggle("guide", i >= ga && i <= gb);
     });
-    const cur = box.querySelector(".w.cur") || box.querySelector(".w.ghost");
+    const cur = box.querySelector(".w.cur") || box.querySelector(".w.guide");
     if (cur) { const r = cur.getBoundingClientRect(); if (r.bottom > innerHeight - 140 || r.top < 80) window.scrollBy({ top: r.top - innerHeight * 0.4, behavior: "smooth" }); }
-    const g = $("#gauge"); if (!g) return;
-    const [h, s] = PACE_TEXT[p.state];
-    g.dataset.state = p.state;
-    $("#pace-h").textContent = h; $("#pace-s").textContent = follow.note || s;
-    const dot = $("#pace-dot"); dot.hidden = p.x == null; if (p.x != null) dot.style.left = `${p.x}%`;
     const n = textById(tid).ghost.median.length;
     $("#wc").textContent = SR ? `${Math.min(follow.ptr, n)} / ${n} words` : `${n} words`;
     $("#wprog").style.width = `${(100 * Math.min(follow.ptr, n)) / n}%`;
+    const g = $("#gauge"); if (!g || !guided) { const tn = $("#test-note"); if (tn && follow.note) tn.textContent = follow.note; return; }
+    let [h, s] = PACE_TEXT[p.state];
+    const at = Math.max(follow.ptr, p.ghost);
+    if (focus && at >= focus.w0 - 8 && at <= focus.w1 && FOCUS_TIP[focus.type]) s = FOCUS_TIP[focus.type](focus);
+    g.dataset.state = p.state;
+    $("#pace-h").textContent = h; $("#pace-s").textContent = follow.note || s;
+    const dot = $("#pace-dot"); dot.hidden = p.x == null; if (p.x != null) dot.style.left = `${p.x}%`;
   }
   const stepsHTML = () => {
     const idx = { permission: 1, denied: 1, unsupported: 1, ready: 2, recording: 2, review: 3, analyzing: 4, error: 3 }[state];
@@ -506,10 +541,10 @@ async function viewPractice(params) {
         <div><div style="font-size:18px">Ready when you are</div><div class="meta" style="margin-top:4px">Press record, then read the whole passage.</div></div>
         <button class="btn link" data-upload>Upload a recording instead</button></div>`;
       case "recording": return `<div class="recorder center"><div style="align-self:stretch;display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--muted)"><span style="display:flex;align-items:center;gap:8px;color:#A23B48;font-weight:600"><span class="sw bad" style="width:10px;height:10px"></span>Recording</span><span id="timer" style="font-size:18px;color:var(--ink)">0:00</span></div>
-        <div class="gauge" id="gauge" data-state="wait" aria-live="polite">
+        ${mode === "practice" ? `<div class="gauge" id="gauge" data-state="wait" aria-live="polite">
           <div class="pace-h" id="pace-h">Start reading</div><div class="meta" id="pace-s">The highlight follows your voice.</div>
           <div class="track" aria-hidden="true"><span class="zone">Slower</span><span class="band">Good readers</span><span class="zone">Faster</span><i id="pace-dot" hidden></i></div>
-        </div>
+        </div>` : `<div class="gauge testmode"><div class="pace-h">Test mode</div><div class="meta" id="test-note">No hints while you read. Your report shows how it went.</div></div>`}
         <div style="align-self:stretch"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px"><span id="wc"></span><span>Good readers ≈ ${fmtTime(t.typical_s)}</span></div><div class="progress"><div id="wprog"></div></div></div>
         <button class="stopbtn" id="stop" aria-label="Stop recording"><span></span></button><div class="meta">Stop when you reach the last word.</div></div>`;
       case "review": return `<div class="recorder"><h2 style="font-size:24px">${take.name ? "File ready" : `Nice. Recorded ${fmtTime(take.seconds)}.`}</h2>
@@ -532,10 +567,25 @@ async function viewPractice(params) {
     $("#recorder").innerHTML = recorderHTML();
     bind();
   };
-  const go = (s) => { state = s; paint(); };
-  $("#passage-card").innerHTML = passageHTML();
-  $("#passage").addEventListener("change", (e) => { tid = e.target.value; hw = null; $("#passage-card").innerHTML = passageHTML(); bindPassage(); });
-  const bindPassage = () => $("#passage").addEventListener("change", (e) => { tid = e.target.value; hw = null; $("#passage-card").innerHTML = passageHTML(); bindPassage(); });
+  const go = (s) => {
+    state = s; paint();
+    document.querySelectorAll("[data-mode], #passage").forEach((b) => (b.disabled = s === "recording"));
+  };
+  const paintPassage = () => {
+    $("#passage-card").innerHTML = passageHTML();
+    $("#passage").addEventListener("change", (e) => { tid = e.target.value; hw = null; findFocus(); paintPassage(); });
+    document.querySelectorAll("[data-mode]").forEach((b) => b.addEventListener("click", () => {
+      if (state === "recording") return;
+      mode = b.dataset.mode; store.set("settings", { ...settings(), mode }); paintPassage();
+    }));
+    if (mode === "practice") paintGuidePreview();
+  };
+  /* Before recording, Practice shows the first phrase to read. */
+  const paintGuidePreview = () => {
+    const [a, b] = phraseAt(0);
+    $("#passage-text").querySelectorAll(".w").forEach((w) => { const i = Number(w.dataset.i); w.classList.toggle("guide", i >= a && i <= b); });
+  };
+  paintPassage();
   const fileInput = $("#file");
   fileInput.addEventListener("change", () => {
     const f = fileInput.files[0]; if (!f) return;
@@ -591,7 +641,7 @@ async function viewPractice(params) {
       const body = await r.json().catch(() => ({}));
       if (!r.ok) throw new Error(body.detail || `The server returned ${r.status}.`);
       const id = `${Date.now().toString(36)}`;
-      saveSession({ id, date: new Date().toISOString(), title: body.text_title, duration: body.duration_s, server: body.session, good_reader: body.good_reader, report: body.report });
+      saveSession({ id, date: new Date().toISOString(), title: body.text_title, duration: body.duration_s, server: body.session, good_reader: body.good_reader, report: body.report, mode });
       clearInterval(ph); closeMic();
       location.hash = `#/report/${id}`;
     } catch (e) { clearInterval(ph); err = e.message; go("error"); }
@@ -624,7 +674,7 @@ async function viewReport(id) {
   if (!sess) { main.innerHTML = `<section class="card"><h2>Report not found</h2><p class="meta">Reports are saved in this browser only.</p></section>`; return; }
   const rep = sess.report;
   const header = `<div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px">
-      <div><h1 class="hello" style="font-size:40px">${esc(sess.title)}</h1><p class="sub">${fmtTime(sess.duration || 0)} · ${rep.words.length} words · compared with ${rep.k} good reading${rep.k > 1 ? "s" : ""} of the same text</p></div>
+      <div><h1 class="hello" style="font-size:40px">${esc(sess.title)}</h1><p class="sub">${sess.mode === "test" ? '<span class="modetag test">Test</span> ' : sess.mode === "practice" ? '<span class="modetag">Practice</span> ' : ""}${fmtTime(sess.duration || 0)} · ${rep.words.length} words · compared with ${rep.k} good reading${rep.k > 1 ? "s" : ""} of the same text</p></div>
       <div style="display:flex;flex-wrap:wrap;gap:10px"><button class="btn" id="dl">${ICON.download}Download report</button><a class="btn primary" href="#/practice?t=${esc(rep.text_id)}">Practise again</a></div></div>`;
   renderReport(main, sess, { header });
   $("#dl").addEventListener("click", () => {
@@ -639,7 +689,7 @@ function viewReports() {
   const all = sessions();
   main.innerHTML = `<h1 class="hello" style="font-size:40px">Reports</h1>` + (all.length ? `<div class="list">${all.map((s) => {
     const sm = summary(s.report);
-    return `<a class="listitem" href="#/report/${esc(s.id)}"><div class="grow"><div class="t">${esc(s.title)}</div><div class="m">${new Date(s.date).toLocaleString()} · ${fmtTime(s.duration || 0)}</div></div>
+    return `<a class="listitem" href="#/report/${esc(s.id)}"><div class="grow"><div class="t">${esc(s.title)}</div><div class="m">${s.mode === "test" ? '<span class="modetag test">Test</span> ' : s.mode === "practice" ? '<span class="modetag">Practice</span> ' : ""}${new Date(s.date).toLocaleString()} · ${fmtTime(s.duration || 0)}</div></div>
       <span class="chip" style="height:36px"><span class="sw ok"></span>${sm.pct}/100 in range</span><span class="chip" style="height:36px"><span class="sw ${s.report.regions.length ? "bad" : "ok"}"></span>${s.report.regions.length} to fix</span></a>`;
   }).join("")}</div>
     <div><button class="btn" id="clear">Clear history</button></div>` : `<div class="empty">No reports yet. <a href="#/practice">Record your first reading</a>.</div>`);

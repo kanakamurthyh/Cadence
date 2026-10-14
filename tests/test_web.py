@@ -24,6 +24,14 @@ def test_texts_only_analyzable_speeches_first():
     assert all(r["display"] and r["typical_s"] > 0 for r in rows)
 
 
+def test_ghost_pause_cues_are_inside_the_passage():
+    for r in client.get("/api/texts").json():
+        g, n = r["ghost"], len(r["ghost"]["median"])
+        assert g["pause_after"] == sorted(set(g["pause_after"]))
+        assert all(0 <= i < n - 1 for i in g["pause_after"])
+        assert g["pause_after"], r["id"]  # every good reading has some phrase breaks
+
+
 def test_unknown_text_and_missing_clip_are_errors():
     r = client.post("/api/analyze", files={"file": ("a.wav", b"RIFF", "audio/wav")}, data={"text_id": "T99"})
     assert r.status_code == 404

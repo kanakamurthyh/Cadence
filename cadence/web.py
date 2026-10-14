@@ -29,6 +29,7 @@ FIGURES = ROOT / "docs" / "figures"
 DEMO_TID = "T3"
 SESSIONS: OrderedDict[str, dict] = OrderedDict()  # recent analyses, for A/B clips only
 MAX_SESSIONS = 20
+PAUSE_S = 0.25  # a gap the good readers leave between words that counts as a phrase break (display only)
 
 app = FastAPI(title="Cadence", version="0.3.0")
 
@@ -51,15 +52,19 @@ def _ghost(tid: str) -> dict:
     """Seconds from the first word to each word's start for the good readers: median, fastest, slowest.
 
     The live 'ghost reader' in Practice moves at the median; 'on pace' means between fastest and slowest.
+    `pause_after` lists the words after which the good readers pause (median gap >= PAUSE_S): Practice mode
+    uses them as phrase boundaries for the "read these now" guide and as pause cues.
     """
-    rows = []
+    rows, gaps = [], []
     for g in good_set(tid):
         ws = json.loads((REFS / tid / f"{g}.json").read_text())["words"]
         rows.append([w["start"] - ws[0]["start"] for w in ws])
+        gaps.append([b["start"] - a["end"] for a, b in zip(ws, ws[1:])])
     n = min(len(r) for r in rows)
     m = np.array([r[:n] for r in rows])
+    gap = np.median(np.array([x[: n - 1] for x in gaps]), 0)
     return {"median": np.round(np.median(m, 0), 2).tolist(), "fast": np.round(m.min(0), 2).tolist(),
-            "slow": np.round(m.max(0), 2).tolist()}
+            "slow": np.round(m.max(0), 2).tolist(), "pause_after": [int(i) for i in np.flatnonzero(gap >= PAUSE_S)]}
 
 
 @app.get("/api/texts")
