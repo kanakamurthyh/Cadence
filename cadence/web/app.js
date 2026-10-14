@@ -584,7 +584,8 @@ async function viewPractice(params) {
         <audio controls src="${take.url}"></audio>
         <p class="meta" style="line-height:1.55">Analysis finds each word, measures pace, pauses, pitch and loudness, and compares them with the good readers. It takes about half a minute.</p>
         <label class="field">Compare with<select id="method"><option value="envelope"${settings().method === "envelope" ? " selected" : ""}>Six good readers (recommended)</option><option value="single"${settings().method === "single" ? " selected" : ""}>One reference reader</option></select></label>
-        <button class="btn primary big block" id="analyze">Analyze my reading ${ICON.arrow}</button><button class="btn block" id="redo">Record again</button></div>`;
+        <button class="btn primary big block" id="analyze">Analyze my reading ${ICON.arrow}</button><button class="btn block" id="redo">Record again</button>
+        ${take.name ? "" : `<a class="btn link" style="align-self:center" href="${take.url}" download="cadence_take_${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}${take.ext || ".webm"}">${ICON.download}Save this recording</a>`}</div>`;
       case "analyzing": return `<div class="recorder center" style="padding:40px 0"><div class="spinner" aria-hidden="true"></div><h2 style="font-size:22px">Analysing your reading…</h2><p class="meta" id="phase">Finding each word in the recording</p></div>`;
       case "error": return `<div class="recorder"><h2 style="font-size:24px">We couldn’t analyse that take</h2><div class="errbar">${esc(err)}</div>
         <button class="btn primary big block" id="redo">Record again</button><button class="btn block" data-upload>Upload a different file</button></div>`;

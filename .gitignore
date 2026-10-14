@@ -12,3 +12,11 @@ logs/
 *.log
 Product spec v2.pdf
 .gradio/
+
+# your own recordings stay local (consent); the plan and label files can be committed
+data/takes/*/*.wav
+data/takes/*/*.webm
+data/takes/*/*.m4a
+data/takes/*/*.mp3
+data/takes/*/*.ogg
+data/takes/*/*.flac

@@ -1,4 +1,5 @@
 import runpy
+from pathlib import Path
 import sys
 
 import pytest
@@ -38,3 +39,12 @@ def test_expected_length_change_models_crossfades():
     assert _expected_delta(["missing_pause", 5, 0, 1], words) == pytest.approx(-(0.5 - 0.01) - 0.01)
     assert _expected_delta(["pace_rushed", 5, 1, 2], words) == pytest.approx((0.55 - 1) * 1.5)
     assert _expected_delta(["monotone", 5, 0, 2], words) == 0.0
+
+
+def test_instructed_labels_spans_words_and_pause_boundary():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("il", Path(__file__).resolve().parent.parent / "scripts" / "instructed_labels.py")
+    il = importlib.util.module_from_spec(spec); spec.loader.exec_module(il)
+    words = [{"start": i * 1.0, "end": i * 1.0 + 0.5} for i in range(10)]
+    lines = il.label_lines(words, 2.0, [{"type": "pace", "w0": 2, "w1": 4}, {"type": "missing_pause", "w0": 6, "w1": 6}])
+    assert lines == ["4.000\t6.500\tpace", "8.000\t9.500\tmissing_pause"]

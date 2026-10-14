@@ -1,0 +1,10 @@
+{
+ "note": "Fixed before recording. Word indices are into words_of(TEXTS['T3']['text']) (0-based, inclusive). One reader (the project author), one flaw per take; take1 is a natural best reading with no flaw.",
+ "takes": {
+  "solo_T3_take1": {"text_id": "T3", "flaws": []},
+  "solo_T3_take2": {"text_id": "T3", "flaws": [{"type": "pace", "w0": 87, "w1": 102, "say": "RUSH: 'It is rather for us to be here dedicated to the great task remaining before us'"}]},
+  "solo_T3_take3": {"text_id": "T3", "flaws": [{"type": "monotone", "w0": 139, "w1": 150, "say": "FLAT, one pitch: 'that this nation, under God, shall have a new birth of freedom'"}]},
+  "solo_T3_take4": {"text_id": "T3", "flaws": [{"type": "missing_pause", "w0": 60, "w1": 61, "say": "NO PAUSE at the full stop: '...what they did here It is for us the living'"}]},
+  "solo_T3_take5": {"text_id": "T3", "flaws": [{"type": "volume_fade", "w0": 163, "w1": 168, "say": "FADE to a near-whisper: 'shall not perish from the earth'"}]}
+ }
+}
