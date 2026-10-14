@@ -162,7 +162,7 @@ select, input[type="text"] { max-width: 100%; font: inherit; font-size: 14px; co
 .meter.rec span { background: var(--bad); }
 .recbtn { width: 112px; height: 112px; border-radius: 50%; border: 8px solid var(--rose); background: var(--bad); color: #fff; display: flex; align-items: center; justify-content: center; }
 .recbtn svg { width: 38px; height: 38px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
-.stopbtn { width: 96px; height: 96px; border-radius: 50%; border: 0; background: var(--bad); display: flex; align-items: center; justify-content: center; animation: pulse 1.6s ease-out infinite; }
+.stopbtn { width: 96px; height: 96px; border-radius: 50%; border: 0; background: var(--bad); display: flex; align-items: center; justify-content: center; transition: box-shadow 90ms linear; }
 .stopbtn span { width: 30px; height: 30px; border-radius: 6px; background: #fff; }
 @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(217,71,63,0.35); } 70% { box-shadow: 0 0 0 18px rgba(217,71,63,0); } 100% { box-shadow: 0 0 0 0 rgba(217,71,63,0); } }
 .timer { font-size: 52px; font-weight: 300; letter-spacing: -0.02em; }
@@ -189,3 +189,26 @@ audio { width: 100%; }
 .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 0 8px 8px; font-size: 13px; color: var(--muted); }
 .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--black); color: #fff; padding: 14px 20px; border-radius: 14px; font-size: 14px; max-width: min(560px, 90vw); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* live read-along */
+.passage .w { border-radius: 6px; transition: color 160ms ease, background-color 160ms ease, box-shadow 160ms ease; }
+.passage .w.flag { background: var(--rose); color: var(--rose-deep); padding: 0 2px; }
+.passage.live .w { color: #7B8794; }
+.passage.live .w.flag { background: transparent; }
+.passage.live .w.done { color: var(--ink); }
+.passage.live .w.ghost { box-shadow: inset 0 -3px 0 var(--ok); }
+.passage.live .w.cur { color: var(--blue-deep); background: var(--blue-tint); padding: 0 3px; }
+.live-legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: var(--muted); }
+.live-legend span { display: flex; align-items: center; gap: 8px; }
+.live-legend i { display: inline-block; width: 22px; height: 14px; border-radius: 4px; }
+.lg-you { background: var(--blue-tint); } .lg-ghost { box-shadow: inset 0 -3px 0 var(--ok); } .lg-done { background: var(--ink); height: 3px !important; }
+.gauge { align-self: stretch; display: flex; flex-direction: column; gap: 6px; text-align: left; padding: 18px; border-radius: 18px; background: var(--ground); }
+.gauge .pace-h { font-size: 22px; font-weight: 500; }
+.gauge[data-state="ok"] { background: var(--ok-tint); } .gauge[data-state="ok"] .pace-h { color: var(--ok-ink); }
+.gauge[data-state="fast"], .gauge[data-state="slow"] { background: var(--sand); } .gauge[data-state="fast"] .pace-h, .gauge[data-state="slow"] .pace-h { color: var(--sand-ink); }
+.track { position: relative; display: grid; grid-template-columns: 30fr 40fr 30fr; height: 34px; margin-top: 10px; border-radius: 999px; overflow: hidden; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.track span { display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.track .zone { background: rgba(255,255,255,0.7); }
+.track .band { background: #CDE9DF; color: var(--ok-ink); font-weight: 600; }
+.track i { position: absolute; top: 3px; bottom: 3px; width: 6px; margin-left: -3px; border-radius: 3px; background: var(--blue); box-shadow: 0 0 0 2px #fff; transition: left 600ms ease; }
+@media (prefers-reduced-motion: reduce) { .passage .w, .track i, .stopbtn { transition: none; } }

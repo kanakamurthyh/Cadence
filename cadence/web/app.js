@@ -256,6 +256,7 @@ async function openMic() {
 }
 function closeMic() {
   cancelAnimationFrame(mic.raf); clearInterval(mic.timer);
+  mic.onClose?.(); mic.onClose = null;
   if (mic.recorder && mic.recorder.state !== "inactive") mic.recorder.stop();
   mic.stream?.getTracks().forEach((t) => t.stop());
   mic.ctx?.close().catch(() => {});
@@ -352,21 +353,132 @@ async function viewPractice(params) {
   if (!hw && last && last.report.text_id === tid) { const r = topRegion(last.report); if (r) hw = [r.w0, r.w1]; }
   let state = "permission", take = null, err = "";
 
+  /* The passage as one element per scored word (same tokenizer as the server: letters and apostrophes). */
+  const passageWordsHTML = (t) => {
+    let out = "", pos = 0, k = 0;
+    for (const m of t.display.matchAll(/[A-Za-z’']+/g)) {
+      const core = m[0].replace(/^[’']+|[’']+$/g, "");
+      if (!core) continue;
+      out += esc(t.display.slice(pos, m.index));
+      const flag = hw && k >= hw[0] && k <= hw[1] ? " flag" : "";
+      out += `<span class="w${flag}" data-i="${k}">${esc(m[0])}</span>`;
+      pos = m.index + m[0].length; k++;
+    }
+    return out + esc(t.display.slice(pos));
+  };
   const passageHTML = () => {
     const t = textById(tid);
-    let body = esc(t.display);
-    if (hw && last) {
-      const phrase = last.report.words.slice(hw[0], hw[1] + 1).map((w) => w.word).join(" ");
-      const re = new RegExp(phrase.split(" ").map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("[\\s\\p{P}]+"), "iu");
-      body = body.replace(re, (m) => `<mark>${m}</mark>`);
-    }
     return `<div style="display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:14px">
         <div><h2 id="h-passage" style="font-size:22px">${esc(t.title)}</h2><p class="meta">${esc(t.author)} · ${t.words} words · good readers take about ${fmtTime(t.typical_s)}</p></div>
         <label class="field">Passage<select id="passage">${TEXTS.map((x) => `<option value="${x.id}"${x.id === tid ? " selected" : ""}>${esc(x.title)}${x.group === "research" ? " (research)" : ""}</option>`).join("")}</select></label>
       </div>
-      <p class="passage">${body}</p>
-      <p class="note">${ICON.info}<span>${hw && last ? "Highlighted: the line flagged last time. " : ""}Read the whole passage from its first word to its last; the title isn’t part of it.${t.context ? " " + esc(t.context) : ""}</span></p>`;
+      <div class="live-legend" id="live-legend" hidden><span><i class="lg-you"></i>You</span><span><i class="lg-ghost"></i>A typical good reader</span><span><i class="lg-done"></i>Read</span></div>
+      <p class="passage" id="passage-text">${passageWordsHTML(t)}</p>
+      <p class="note">${ICON.info}<span>${hw ? "Highlighted: the line flagged last time. " : ""}Read the whole passage from its first word to its last; the title isn’t part of it.${t.context ? " " + esc(t.context) : ""}</span></p>`;
   };
+
+  /* ---- live read-along: Chrome's speech recognizer → position in the passage; ghost reader from good readers' timings ---- */
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  const norm = (w) => w.toLowerCase().replace(/[’']/g, "").replace(/[^a-z]/g, "");
+  const lev = (a, b) => {
+    const d = Array.from({ length: a.length + 1 }, (_, i) => [i]);
+    for (let j = 1; j <= b.length; j++) d[0][j] = j;
+    for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[a.length][b.length];
+  };
+  const similar = (a, b) => a === b || (a.length > 3 && b.length > 3 && (a.startsWith(b) || b.startsWith(a) || lev(a, b) <= (Math.max(a.length, b.length) > 6 ? 2 : 1)))
+    || (a.length >= 5 && b.length <= 4 && a.startsWith(b));  // "cannot" heard for "can not"
+  const follow = { rec: null, base: 0, fin: 0, ptr: 0, voiceAt: 0, words: [], on: false, note: "" };
+  const advance = (from, tokens) => {
+    let p = from;
+    for (const tok of tokens) {
+      const n = norm(tok); if (!n) continue;
+      for (let j = p; j < Math.min(follow.words.length, p + 5); j++) if (similar(n, follow.words[j])) { p = j + 1; break; }
+    }
+    return p;
+  };
+  function startFollow() {
+    const t = textById(tid);
+    follow.words = [...t.display.matchAll(/[A-Za-z’']+/g)].map((m) => norm(m[0])).filter(Boolean);
+    Object.assign(follow, { base: 0, fin: 0, ptr: 0, voiceAt: 0, on: true, note: "" });
+    $("#passage-text").classList.add("live");
+    $("#live-legend").hidden = false;
+    if (!SR) { follow.note = "Live word-following needs Chrome or Edge. Recording still works; the ghost reader shows a typical pace."; return; }
+    const rec = new SR();
+    rec.lang = "en-US"; rec.continuous = true; rec.interimResults = true; rec.maxAlternatives = 1;
+    rec.onresult = (e) => {
+      let fin = [], all = [];
+      for (let i = 0; i < e.results.length; i++) {
+        const toks = e.results[i][0].transcript.split(/\s+/);
+        all = all.concat(toks); if (e.results[i].isFinal) fin = fin.concat(toks);
+      }
+      follow.fin = advance(follow.base, fin);
+      follow.ptr = Math.max(follow.fin, advance(follow.base, all), follow.ptr);
+      paintFollow();
+    };
+    rec.onerror = (e) => {
+      if (e.error === "no-speech" || e.error === "aborted") return;
+      follow.note = e.error === "network" ? "Live word-following needs an internet connection (Chrome’s speech service). Recording continues."
+        : e.error === "not-allowed" || e.error === "service-not-allowed" ? "Live word-following was blocked. Recording continues."
+        : `Live word-following stopped (${e.error}). Recording continues.`;
+      paintFollow();
+    };
+    rec.onend = () => {  // Chrome ends a session after a pause: carry on from the last confirmed word
+      if (!follow.on) return;
+      follow.base = follow.fin = follow.ptr;
+      try { rec.start(); } catch { /* already restarting */ }
+    };
+    follow.rec = rec;
+    try { rec.start(); } catch { follow.note = "Live word-following could not start. Recording continues."; }
+  }
+  mic.onClose = () => { follow.on = false; try { follow.rec?.stop(); } catch { /* not running */ } };
+  function stopFollow() {
+    follow.on = false;
+    try { follow.rec?.stop(); } catch { /* not running */ }
+    follow.rec = null;
+    $("#passage-text")?.classList.remove("live");
+    $("#passage-text")?.querySelectorAll(".w").forEach((w) => w.classList.remove("done", "cur", "ghost"));
+    const lg = $("#live-legend"); if (lg) lg.hidden = true;
+  }
+  const LAG = 0.7;  // the recognizer reports a word ~0.7 s after it is spoken
+  function paceNow() {
+    const g = textById(tid).ghost, n = g.median.length;
+    if (!follow.voiceAt) return { ghost: -1, state: "wait" };
+    const el = (performance.now() - follow.voiceAt) / 1000;
+    let gi = 0; while (gi + 1 < n && g.median[gi + 1] <= el) gi++;
+    const k = Math.min(follow.ptr, n - 1);
+    if (!SR || follow.ptr < 3) return { ghost: gi, state: follow.ptr ? "early" : "wait" };
+    const e = el - LAG, fast = g.fast[k], slow = g.slow[k];
+    const pos = slow > fast ? (slow - e) / (slow - fast) : 0.5;  // 1 = as early as the fastest good reader
+    const x = pos > 1 ? 70 + Math.min(30, (pos - 1) * 60) : pos < 0 ? 30 - Math.min(30, -pos * 60) : 30 + pos * 40;
+    return { ghost: gi, state: e < fast - 0.5 ? "fast" : e > slow + 0.5 ? "slow" : "ok", x };
+  }
+  const PACE_TEXT = {
+    wait: ["Start reading", "The highlight follows your voice."], early: ["Listening…", "Pace appears after a few words."],
+    ok: ["On pace", "Inside the range of the good readers."], fast: ["Faster than every good reader", "Ease off a little; let the words land."],
+    slow: ["Slower than every good reader", "Keep going, a little quicker."],
+  };
+  function paintFollow() {
+    const box = $("#passage-text"); if (!box || !follow.on) return;
+    const p = paceNow();
+    box.querySelectorAll(".w").forEach((w) => {
+      const i = Number(w.dataset.i);
+      w.classList.toggle("done", SR && i < follow.ptr);
+      w.classList.toggle("cur", SR && i === follow.ptr && follow.voiceAt > 0);
+      w.classList.toggle("ghost", i === p.ghost);
+    });
+    const cur = box.querySelector(".w.cur") || box.querySelector(".w.ghost");
+    if (cur) { const r = cur.getBoundingClientRect(); if (r.bottom > innerHeight - 140 || r.top < 80) window.scrollBy({ top: r.top - innerHeight * 0.4, behavior: "smooth" }); }
+    const g = $("#gauge"); if (!g) return;
+    const [h, s] = PACE_TEXT[p.state];
+    g.dataset.state = p.state;
+    $("#pace-h").textContent = h; $("#pace-s").textContent = follow.note || s;
+    const dot = $("#pace-dot"); dot.hidden = p.x == null; if (p.x != null) dot.style.left = `${p.x}%`;
+    const n = textById(tid).ghost.median.length;
+    $("#wc").textContent = SR ? `${Math.min(follow.ptr, n)} / ${n} words` : `${n} words`;
+    $("#wprog").style.width = `${(100 * Math.min(follow.ptr, n)) / n}%`;
+  }
   const stepsHTML = () => {
     const idx = { permission: 1, denied: 1, unsupported: 1, ready: 2, recording: 2, review: 3, analyzing: 4, error: 3 }[state];
     return ["Microphone", "Record", "Review", "Analyze"].map((l, i) => {
@@ -378,8 +490,8 @@ async function viewPractice(params) {
     const t = textById(tid);
     switch (state) {
       case "permission": return `<div class="recorder"><div class="bigicon">${ICON.mic}</div>
-        <div><h2 id="h-rec" style="font-size:24px;margin-bottom:8px">Turn on your microphone</h2><p class="meta" style="font-size:15px;line-height:1.6">Cadence listens only while you record. Your audio is analysed on this computer and isn’t uploaded anywhere.</p></div>
-        <ul class="checks"><li>${ICON.check}A quiet room works best; 20–30 cm from the mic.</li><li>${ICON.check}Your voice type and mic level don’t affect the score: pitch and loudness are compared with your own.</li><li>${ICON.check}Your browser will ask you to confirm.</li></ul>
+        <div><h2 id="h-rec" style="font-size:24px;margin-bottom:8px">Turn on your microphone</h2><p class="meta" style="font-size:15px;line-height:1.6">Cadence listens only while you record. Your score is computed on this computer.</p></div>
+        <ul class="checks"><li>${ICON.check}A quiet room works best; 20–30 cm from the mic.</li><li>${ICON.check}Your voice type and mic level don’t affect the score: pitch and loudness are compared with your own.</li><li>${ICON.check}To highlight words as you read, Chrome’s speech recognition sends the live audio to Google while you record. Your saved recording stays here.</li></ul>
         <button class="btn primary big block" id="allow">Allow microphone</button>
         <div style="display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px"><button class="btn link" id="notnow">Not now</button><button class="btn link" data-upload>Upload a recording instead</button></div></div>`;
       case "denied": return `<div class="recorder"><div class="bigicon sand">${ICON.micOff}</div>
@@ -393,8 +505,12 @@ async function viewPractice(params) {
         ${meterHTML(false)}<button class="recbtn" id="rec" aria-label="Start recording">${ICON.mic}</button>
         <div><div style="font-size:18px">Ready when you are</div><div class="meta" style="margin-top:4px">Press record, then read the whole passage.</div></div>
         <button class="btn link" data-upload>Upload a recording instead</button></div>`;
-      case "recording": return `<div class="recorder center"><div style="align-self:stretch;display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--muted)"><span style="display:flex;align-items:center;gap:8px;color:#A23B48;font-weight:600"><span class="sw bad" style="width:10px;height:10px"></span>Recording</span><span>Good readers: about ${fmtTime(t.typical_s)}</span></div>
-        <div class="timer" id="timer">0:00</div><div class="progress"><div id="prog"></div></div>${meterHTML(true)}
+      case "recording": return `<div class="recorder center"><div style="align-self:stretch;display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--muted)"><span style="display:flex;align-items:center;gap:8px;color:#A23B48;font-weight:600"><span class="sw bad" style="width:10px;height:10px"></span>Recording</span><span id="timer" style="font-size:18px;color:var(--ink)">0:00</span></div>
+        <div class="gauge" id="gauge" data-state="wait" aria-live="polite">
+          <div class="pace-h" id="pace-h">Start reading</div><div class="meta" id="pace-s">The highlight follows your voice.</div>
+          <div class="track" aria-hidden="true"><span class="zone">Slower</span><span class="band">Good readers</span><span class="zone">Faster</span><i id="pace-dot" hidden></i></div>
+        </div>
+        <div style="align-self:stretch"><div style="display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:6px"><span id="wc"></span><span>Good readers ≈ ${fmtTime(t.typical_s)}</span></div><div class="progress"><div id="wprog"></div></div></div>
         <button class="stopbtn" id="stop" aria-label="Stop recording"><span></span></button><div class="meta">Stop when you reach the last word.</div></div>`;
       case "review": return `<div class="recorder"><h2 style="font-size:24px">${take.name ? "File ready" : `Nice. Recorded ${fmtTime(take.seconds)}.`}</h2>
         <audio controls src="${take.url}"></audio>
@@ -442,14 +558,25 @@ async function viewPractice(params) {
       setChip("on"); go("review");
     };
     mic.recorder.start(250); mic.t0 = performance.now(); setChip("rec"); go("recording");
-    const typ = textById(tid).typical_s;
+    startFollow(); paintFollow();
     mic.timer = setInterval(() => {
-      const s = (performance.now() - mic.t0) / 1000;
-      const el = $("#timer"); if (el) el.textContent = fmtTime(s);
-      const p = $("#prog"); if (p) p.style.width = `${Math.min(100, (100 * s) / typ)}%`;
-    }, 200);
+      const el = $("#timer"); if (el) el.textContent = fmtTime((performance.now() - mic.t0) / 1000);
+      paintFollow();
+    }, 250);
+    // voice level: a ring around the stop button, and the moment you start speaking starts the ghost reader
+    const buf = new Uint8Array(512);
+    const loop = () => {
+      if (!mic.analyser || state !== "recording") return;
+      mic.analyser.getByteTimeDomainData(buf);
+      let sum = 0; for (const v of buf) sum += ((v - 128) / 128) ** 2;
+      const lvl = Math.min(1, Math.sqrt(sum / buf.length) * 6);
+      if (!follow.voiceAt && lvl > 0.22 && performance.now() - mic.t0 > 300) { follow.voiceAt = performance.now(); paintFollow(); }
+      const b = $("#stop"); if (b) b.style.boxShadow = `0 0 0 ${(6 + lvl * 26).toFixed(1)}px rgba(217,71,63,${(0.12 + lvl * 0.18).toFixed(2)})`;
+      mic.raf = requestAnimationFrame(loop);
+    };
+    loop();
   }
-  function stopRec() { clearInterval(mic.timer); mic.recorder?.stop(); }
+  function stopRec() { clearInterval(mic.timer); cancelAnimationFrame(mic.raf); stopFollow(); mic.recorder?.stop(); }
   async function analyzeTake() {
     const method = $("#method")?.value || "envelope";
     store.set("settings", { ...settings(), method });

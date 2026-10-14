@@ -47,6 +47,21 @@ def _durations(tid: str) -> list[float]:
     return out
 
 
+def _ghost(tid: str) -> dict:
+    """Seconds from the first word to each word's start for the good readers: median, fastest, slowest.
+
+    The live 'ghost reader' in Practice moves at the median; 'on pace' means between fastest and slowest.
+    """
+    rows = []
+    for g in good_set(tid):
+        ws = json.loads((REFS / tid / f"{g}.json").read_text())["words"]
+        rows.append([w["start"] - ws[0]["start"] for w in ws])
+    n = min(len(r) for r in rows)
+    m = np.array([r[:n] for r in rows])
+    return {"median": np.round(np.median(m, 0), 2).tolist(), "fast": np.round(m.min(0), 2).tolist(),
+            "slow": np.round(m.max(0), 2).tolist()}
+
+
 @app.get("/api/texts")
 def texts():
     """Passages that can be analysed: speeches first, then research texts."""
@@ -59,7 +74,7 @@ def texts():
             "id": tid, "title": t["title"], "author": t.get("author", ""), "context": CONTEXT.get(tid, ""),
             "display": display_text(tid), "words": len(words_of(t["text"])),
             "typical_s": float(np.median(d)), "range_s": [float(min(d)), float(max(d))],
-            "group": "speech" if tid in SPEECHES else "research", "role": t["role"],
+            "group": "speech" if tid in SPEECHES else "research", "role": t["role"], "ghost": _ghost(tid),
         })
     out.sort(key=lambda r: (r["group"] != "speech", r["id"]))
     return out

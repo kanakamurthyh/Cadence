@@ -627,3 +627,12 @@ memory pressure.
     Reports, Passages, Live demo, Evidence, Dataset, Settings. Sessions saved in the browser.
   - Verified: WebM/Opus upload of the demo clip → same rushed-pace flag (words 126–129), Pacing 7.39, in ~7 s; A/B clips 200;
     demo IoU 0.975; T3 audio against T7 → 422. Tests: 55 pass (4 new in tests/test_web.py).
+- **2026-10-14 (session 10): live read-along in Practice.**
+  - While recording, words highlight as you read (Chrome/Edge Web Speech API, chosen by the user; the permission card says the
+    live audio goes to Google for this, the saved recording and the scoring stay local). Fuzzy forward matching tolerates
+    misheard and skipped words; recognition restarts after pauses.
+  - "Ghost reader": `/api/texts` now returns each passage's good-reader timings per word (median, fastest, slowest from the
+    first word). A teal underline moves at the median pace from your first sound; a gauge says Slower / On pace / Faster than
+    every good reader at your current word (0.7 s recognizer lag compensated). A voice-level ring replaces the waveform.
+  - Verified headless with a fake mic and a scripted recognizer: 0.8× pace → "Faster than every good reader", 1.0× → "On pace";
+    misheard/skipped words still tracked (39/169 after 14 s); highlights cleared on stop; no page errors.
