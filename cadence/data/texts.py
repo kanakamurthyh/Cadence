@@ -136,6 +136,165 @@ TEXTS = {
             "worn-out tools:"
         ),
     },
+
+    # T7 and T8 added 2026-10-14 (session 10) AFTER detector v3 was designed; held out,
+    # never used for calibration or threshold tuning.
+    "T7": {
+        "title": "Please call Stella (Speech Accent Archive)",
+        "author": "GMU Speech Accent Archive elicitation paragraph",
+        "role": "test-indian",
+        "librivox_ids": [],
+        "span_rule": 2,
+        "text": (
+            "Please call Stella. Ask her to bring these things with her from the store: "
+            "Six spoons of fresh snow peas, five thick slabs of blue cheese, and maybe a snack "
+            "for her brother Bob. We also need a small plastic snake and a big toy frog for the "
+            "kids. She can scoop these things into three red bags, and we will go meet her "
+            "Wednesday at the train station."
+        ),
+        "sources": [
+            {
+                "id": "saa_hindi1",
+                "url": "https://accent.gmu.edu/audio/hindi1.mp3",
+                "page": "https://accent.gmu.edu/samples/hindi1/",
+                "speaker": "SAA hindi1 (Hindi L1, born Nagpur, Maharashtra, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/hindi1/",
+                "sha1": "06d8877de0cf80c2ac743605c82dc0fe789059b0",
+                "meta": {"l1": "hindi", "birthplace": "nagpur, maharashtra, india", "sex": "male", "age": 27, "english_onset_age": 2},
+            },
+            {
+                "id": "saa_hindi2",
+                "url": "https://accent.gmu.edu/audio/hindi2.mp3",
+                "page": "https://accent.gmu.edu/samples/hindi2/",
+                "speaker": "SAA hindi2 (Hindi L1, born Hyderabad, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/hindi2/",
+                "sha1": "6452982dbb92256683f7718c40b5b905b615aabe",
+                "meta": {"l1": "hindi", "birthplace": "hyderabad, india", "sex": "male", "age": 31, "english_onset_age": 3},
+            },
+            {
+                "id": "saa_bengali6",
+                "url": "https://accent.gmu.edu/audio/bengali6.mp3",
+                "page": "https://accent.gmu.edu/samples/bengali6/",
+                "speaker": "SAA bengali6 (Bengali L1, born Jamshedpur, Jharkhand, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/bengali6/",
+                "sha1": "4f84240ec2a8413c22d42de1246a0f136c92a3b0",
+                "meta": {"l1": "bengali", "birthplace": "jamshedpur, jharkhand, india", "sex": "male", "age": 29, "english_onset_age": 4},
+            },
+            {
+                "id": "saa_bengali9",
+                "url": "https://accent.gmu.edu/audio/bengali9.mp3",
+                "page": "https://accent.gmu.edu/samples/bengali9/",
+                "speaker": "SAA bengali9 (Bengali L1, born Kolkata, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/bengali9/",
+                "sha1": "313499b90fdfa6cc9d7650efb892ecc8f8e00139",
+                "meta": {"l1": "bengali", "birthplace": "kolkata, india", "sex": "female", "age": 61, "english_onset_age": 12},
+            },
+            {
+                "id": "saa_telugu1",
+                "url": "https://accent.gmu.edu/audio/telugu1.mp3",
+                "page": "https://accent.gmu.edu/samples/telugu1/",
+                "speaker": "SAA telugu1 (Telugu L1, born Kadapa, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/telugu1/",
+                "sha1": "f880839365e0484f4ccf7093ead6f6bf71f7997c",
+                "meta": {"l1": "telugu", "birthplace": "kadapa, india", "sex": "male", "age": 31, "english_onset_age": 6},
+            },
+            {
+                "id": "saa_telugu2",
+                "url": "https://accent.gmu.edu/audio/telugu2.mp3",
+                "page": "https://accent.gmu.edu/samples/telugu2/",
+                "speaker": "SAA telugu2 (Telugu L1, born Guntur, Andhra Pradesh, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/telugu2/",
+                "sha1": "fc842e7ed9b72b0d94dfbf1f0229a0522ae84c55",
+                "meta": {"l1": "telugu", "birthplace": "guntur, andhra pradesh, india", "sex": "male", "age": 18, "english_onset_age": 6},
+            },
+            {
+                "id": "saa_tamil2",
+                "url": "https://accent.gmu.edu/audio/tamil2.mp3",
+                "page": "https://accent.gmu.edu/samples/tamil2/",
+                "speaker": "SAA tamil2 (Tamil L1, born Madras, Tamil Nadu, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/tamil2/",
+                "sha1": "c184bd75002d8e815b1fe0f454020f5df2011a03",
+                "meta": {"l1": "tamil", "birthplace": "madras, tamil nadu, india", "sex": "female", "age": 35, "english_onset_age": 4},
+            },
+            {
+                "id": "saa_tamil5",
+                "url": "https://accent.gmu.edu/audio/tamil5.mp3",
+                "page": "https://accent.gmu.edu/samples/tamil5/",
+                "speaker": "SAA tamil5 (Tamil L1, born Coimbatore, Tamil Nadu, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/tamil5/",
+                "sha1": "b97eb0be43036736fb070f92da1056069a0f3ab1",
+                "meta": {"l1": "tamil", "birthplace": "coimbatore, tamil nadu, india", "sex": "female", "age": 36, "english_onset_age": 5},
+            },
+            {
+                "id": "saa_marathi1",
+                "url": "https://accent.gmu.edu/audio/marathi1.mp3",
+                "page": "https://accent.gmu.edu/samples/marathi1/",
+                "speaker": "SAA marathi1 (Marathi L1, born Bombay, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/marathi1/",
+                "sha1": "5b255fa2cfe8f8b74bb4d990525fb96f9d94e556",
+                "meta": {"l1": "marathi", "birthplace": "bombay, india", "sex": "female", "age": 21, "english_onset_age": 3},
+            },
+            {
+                "id": "saa_marathi2",
+                "url": "https://accent.gmu.edu/audio/marathi2.mp3",
+                "page": "https://accent.gmu.edu/samples/marathi2/",
+                "speaker": "SAA marathi2 (Marathi L1, born Madras, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/marathi2/",
+                "sha1": "838cd7add3663371db9d67c331f0b477722881f7",
+                "meta": {"l1": "marathi", "birthplace": "madras, india", "sex": "male", "age": 28, "english_onset_age": 10},
+            },
+            {
+                "id": "saa_malayalam1",
+                "url": "https://accent.gmu.edu/audio/malayalam1.mp3",
+                "page": "https://accent.gmu.edu/samples/malayalam1/",
+                "speaker": "SAA malayalam1 (Malayalam L1, born Kerala State, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/malayalam1/",
+                "sha1": "fce7cafe68ecd491c728fd3275a8ad222a65b82f",
+                "meta": {"l1": "malayalam", "birthplace": "kerala state, india", "sex": "male", "age": 24, "english_onset_age": 5},
+            },
+            {
+                "id": "saa_malayalam2",
+                "url": "https://accent.gmu.edu/audio/malayalam2.mp3",
+                "page": "https://accent.gmu.edu/samples/malayalam2/",
+                "speaker": "SAA malayalam2 (Malayalam L1, born Trivandrum, Kerala, India)",
+                "licence": "CC BY-NC-SA 4.0 (Speech Accent Archive, George Mason University; https://accent.gmu.edu/howto/)",
+                "provenance": "Speech Accent Archive, Weinberger & Kelley, GMU; speaker page https://accent.gmu.edu/samples/malayalam2/",
+                "sha1": "f95a6da139aa2f7e78ccd632dc1ad629fed439eb",
+                "meta": {"l1": "malayalam", "birthplace": "trivandrum, kerala, india", "sex": "female", "age": 29, "english_onset_age": 5},
+            },
+        ],
+    },
+
+    "T8": {
+        "title": "Fruit-Gathering XVIII",
+        "author": "Rabindranath Tagore (1916)",
+        "role": "test-indian",
+        "librivox_ids": [17632],
+        "span_rule": 2,
+        "text": (
+            "No: it is not yours to open buds into blossoms. "
+            "Shake the bud, strike it; it is beyond your power to make it blossom. "
+            "Your touch soils it, you tear its petals to pieces and strew them in the dust. "
+            "But no colours appear, and no perfume. "
+            "Ah! it is not for you to open the bud into a blossom. "
+            "He who can open the bud does it so simply. "
+            "He gives it a glance, and the life-sap stirs through its veins. "
+            "At his breath the flower spreads its wings and flutters in the wind. "
+            "Colours flush out like heart-longings, the perfume betrays a sweet secret. "
+            "He who can open the bud does it so simply."
+        ),
+    },
 }
 
 MIN_GOOD = 4  # an envelope needs at least this many good renditions (spec section 5)
@@ -180,6 +339,32 @@ The woods are lovely, dark and deep,
 But I have promises to keep,
 And miles to go before I sleep,
 And miles to go before I sleep.""",
+    "T7": (
+        "Please call Stella. Ask her to bring these things with her from the store: "
+        "Six spoons of fresh snow peas, five thick slabs of blue cheese, and maybe a snack "
+        "for her brother Bob. We also need a small plastic snake and a big toy frog for the "
+        "kids. She can scoop these things into three red bags, and we will go meet her "
+        "Wednesday at the train station."
+    ),
+    "T8": """No: it is not yours to open buds into blossoms.
+
+Shake the bud, strike it; it is beyond your power to make it blossom.
+
+Your touch soils it, you tear its petals to pieces and strew them in the dust.
+
+But no colours appear, and no perfume.
+
+Ah! it is not for you to open the bud into a blossom.
+
+He who can open the bud does it so simply.
+
+He gives it a glance, and the life-sap stirs through its veins.
+
+At his breath the flower spreads its wings and flutters in the wind.
+
+Colours flush out like heart-longings, the perfume betrays a sweet secret.
+
+He who can open the bud does it so simply.""",
 }
 
 

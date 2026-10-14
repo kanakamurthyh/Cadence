@@ -32,6 +32,8 @@
 | T4 | Gettysburg Address, opening paragraph | Same 19 readings as T3 | Held-out test (oratory); shares speakers with T3, not with calibration |
 | T5 | FDR "Day of Infamy", opening | FDR original + 1 LibriVox | Held-out test; excluded until ≥ 4 renditions |
 | T6 | Kipling, *If—*, first two stanzas | 15 LibriVox (2 of 17 downloads failed) | **Untouched final test**: added 2026-10-14 after detector v2 was frozen; no speaker shared with any text |
+| T7 | SAA "Please Call Stella" elicitation | 12 Speech Accent Archive (India-born speakers) | **Held-out Indian-speaker test**: added 2026-10-14 after detector v3 was designed; never used for calibration |
+| T8 | Tagore *Fruit-Gathering* XVIII | 16 LibriVox (project 17632) | **Held-out Indian-speaker test**: added 2026-10-14 after detector v3 was designed; never used for calibration |
 
 No speaker in T1's good set (the only T1 audio calibration uses) appears in any test text.
 `cadence inventory` checks this.
@@ -41,11 +43,45 @@ No speaker in T1's good set (the only T1 audio calibration uses) appears in any 
 - **T1:** *Sea Fever*, John Masefield (1902).
 - **T2:** *Stopping by Woods on a Snowy Evening*, Robert Frost (1923).
 - **T3:** Gettysburg Address, closing paragraph, Abraham Lincoln (1863).
+- **T6:** *If—* (first two stanzas), Rudyard Kipling (1910).
+- **T8:** *Fruit-Gathering* poem XVIII, Rabindranath Tagore (1916).
 
-All texts are public domain in the US. All recordings are LibriVox recordings, released into
-the public domain ([LibriVox licence](https://librivox.org/pages/public-domain/)). Reader names
-are LibriVox display names, as published. Derived clips (crops, ladders) are released into
-the public domain on the same terms.
+All of the above texts are public domain in the US. Their recordings are LibriVox recordings,
+released into the public domain ([LibriVox licence](https://librivox.org/pages/public-domain/)).
+Reader names are LibriVox display names, as published. Derived clips (crops, ladders) are
+released into the public domain on the same terms.
+
+- **T7:** "Please Call Stella" elicitation paragraph, Speech Accent Archive (GMU). Recordings
+  are CC BY-NC-SA 4.0 — "the contents of this project are made availalbe under the BY-NC-SA 4.0
+  license from Creative Commons" (http://accent.gmu.edu/howto/). T7 audio and every clip derived
+  from it (ladders, crops) is CC BY-NC-SA 4.0 and is published as a separate subset with that
+  licence. No commercial redistribution.
+
+## T7 Indian-speaker details (held-out; CC BY-NC-SA 4.0)
+
+T7 covers 12 India-born speakers across 6 L1 languages (2 per language). Added 2026-10-14 after
+detector v3 was designed. Never used for calibration.
+
+| ID | L1 | Birthplace | Sex | Age | English onset |
+|---|---|---|---|---|---|
+| saa_hindi1 | Hindi | Nagpur, Maharashtra, India | M | 27 | 2 (academic) |
+| saa_hindi2 | Hindi | Hyderabad, India | M | 31 | 3 (academic) |
+| saa_bengali6 | Bengali | Jamshedpur, Jharkhand, India | M | 29 | 4 (naturalistic) |
+| saa_bengali9 | Bengali | Kolkata, India | F | 61 | 12 (academic) |
+| saa_telugu1 | Telugu | Kadapa, India | M | 31 | 6 (academic) |
+| saa_telugu2 | Telugu | Guntur, Andhra Pradesh, India | M | 18 | 6 (academic) |
+| saa_tamil2 | Tamil | Madras, Tamil Nadu, India | F | 35 | 4 (naturalistic) |
+| saa_tamil5 | Tamil | Coimbatore, Tamil Nadu, India | F | 36 | 5 (academic) |
+| saa_marathi1 | Marathi | Bombay, India | F | 21 | 3 (academic) |
+| saa_marathi2 | Marathi | Madras, India | M | 28 | 10 (academic) |
+| saa_malayalam1 | Malayalam | Kerala State, India | M | 24 | 5 (academic) |
+| saa_malayalam2 | Malayalam | Trivandrum, Kerala, India | F | 29 | 5 (academic) |
+
+## T8 (LibriVox Tagore; held-out; public domain)
+
+T8 uses 16 readings of *Fruit-Gathering* poem XVIII (Rabindranath Tagore, 1916) from LibriVox
+project 17632. Text and recordings are public domain. Added 2026-10-14 after detector v3 was
+designed; never used for calibration.
 
 ## Flaw injection (fixed seed 20261013 + text number)
 

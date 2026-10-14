@@ -390,3 +390,18 @@ def test_v3_phrase_trim_keeps_words_won_by_other_channels():
     assert E.CHANNELS[ch[11]][:2] == ("rate", -1)
     hit = [r for r in detect(att, words, env, p) if r["type"] == "pace"]
     assert hit and hit[0]["feature"] == "rate_phr" and (hit[0]["w0"], hit[0]["w1"]) == (11, 16)
+
+
+def test_t7_t8_registered():
+    """T7 and T8 are in test_texts(); T7 has 12 sources each with a 40-char sha1;
+    T7's text starts with 'Please call Stella'; T8 has librivox_ids containing 17632."""
+    from cadence.data.texts import TEXTS, test_texts
+    tids = test_texts()
+    assert "T7" in tids, "T7 must be in test_texts()"
+    assert "T8" in tids, "T8 must be in test_texts()"
+    t7 = TEXTS["T7"]
+    assert len(t7["sources"]) == 12, f"T7 must have 12 sources, got {len(t7['sources'])}"
+    assert all(len(s["sha1"]) == 40 for s in t7["sources"]), "Every T7 source must have a 40-char sha1"
+    assert t7["text"].startswith("Please call Stella"), "T7 text must start with 'Please call Stella'"
+    t8 = TEXTS["T8"]
+    assert 17632 in t8["librivox_ids"], "T8 must reference LibriVox book 17632"

@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: Task 3 fix round 1 — phrase trimming pinned; only phrase-channel words trimmed)
+> Last updated: 2026-10-14 (session 10: Task 4 — Indian-speaker held-out texts T7 (SAA) and T8 (Tagore) registered)
 
 ## 1. What this project is
 
@@ -89,6 +89,8 @@ falls outside that range. This range is the **consensus envelope**.
 | T4 | Gettysburg, opening | 19 (same readers as T3) | Test |
 | T5 | FDR "Day of Infamy" | 2 | Blocked: needs ≥ 2 teammate takes |
 | T6 | Kipling, *If—* (2 stanzas) | 15 | **Untouched final test** (added after v2 was frozen; no shared speakers) |
+| T7 | SAA "Please Call Stella" (12 India-born speakers) | 12 | **Held-out Indian** (added after v3 design; CC BY-NC-SA 4.0) |
+| T8 | Tagore *Fruit-Gathering* XVIII (LibriVox 17632) | 16 | **Held-out Indian** (added after v3 design; public domain) |
 
 All audio is public domain; TED/TEDx is blocked by its licence. Good readers are still ranked
 provisionally by aligner confidence until the 3-rater human ranking is done.
@@ -493,3 +495,22 @@ memory pressure.
     asserted; new `test_v3_phrase_trim_falls_back_to_full_phrase` (10-19 kept) and
     `test_v3_phrase_trim_keeps_words_won_by_other_channels` (11-16, not 14-16). Checked that
     disabling trimming or filtering every word makes tests fail. 31 tests pass, 0 warnings.
+- **2026-10-14 (session 10, Task 4): Indian-speaker held-out texts T7 and T8 registered.**
+  - `cadence/data/texts.py`: added T7 (SAA "Please Call Stella", 12 India-born speakers, CC
+    BY-NC-SA 4.0, role "test-indian", span_rule 2) and T8 (LibriVox Tagore *Fruit-Gathering*
+    XVIII, 16 readers, public domain, role "test-indian", span_rule 2). Added DISPLAY entries
+    for both texts. Added comment that T7/T8 were added 2026-10-14 after detector v3 was
+    designed; held out, never used for calibration.
+  - `scripts/fetch_librivox.py`: added argparse with `--texts T7 T8` optional argument (default
+    = all texts); added `**s.get("meta", {})` to sources rows to pass through L1/birthplace/sex/
+    age/english_onset_age for T7 speakers.
+  - `docs/DATA_LICENSING.md`: added T7 row (CC BY-NC-SA 4.0, non-commercial, share-alike);
+    added T8 (public domain); added T7 speaker L1+birthplace table; added note that T7 audio
+    and all derived clips are CC BY-NC-SA 4.0 and must be published as a separate subset.
+  - `data/DATA_CARD.md`: added T7 and T8 rows with role "held-out Indian" to texts table;
+    added T7 speaker table; added T8 section.
+  - T8 ID-match check: staged IDs (lv17632_NN_slug) match exactly what `reader_id()` in
+    `cadence/data/librivox.py` would generate from the LibriVox API reader names — IDs match.
+  - New test `test_t7_t8_registered`: T7 and T8 in `test_texts()`, T7 has 12 sources each
+    with 40-char sha1, T7 text starts with "Please call Stella", T8 has librivox_ids [17632].
+  - 32 tests pass, 0 RuntimeWarnings.
