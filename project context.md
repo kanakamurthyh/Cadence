@@ -289,6 +289,7 @@ memory pressure.
 - [ ] Human reader ranking: 3 teammates rank all readings (`cadence human`), then `cadence refs && cadence ladders`, check with `cadence status`.
 - [ ] Listening test: 5 listeners on the rebuilt ladders (perceived-severity calibration on T1).
 - [ ] Natural takes: teammate recordings plus 2 independent annotators (`docs/human_data_protocol.md`).
+- [ ] Optional T9: Tennyson "Charge of the Light Brigade" (17 LibriVox readers + Tennyson 1890 as the famous reference).
 - [ ] Solo fallback (teammates unavailable): 5 instructed T3 takes by the author (`docs/solo_recording.md`), then
       `scripts/instructed_labels.py` and `cadence natural`. Report as 1 reader, instruction labels, aligner-timed, no 2nd annotator.
 - [ ] T5: ≥ 2 (ideally 4) teammate takes of "Day of Infamy" plus consent forms.
@@ -307,8 +308,10 @@ memory pressure.
     labels timed by alignment (`data/annotations/instructed/`). Guide: `docs/solo_recording.md`.
   - Web app review step: "Save this recording" download. Take audio is gitignored (`data/takes/*/*.<audio>`).
   - Dry run on a stand-in LibriVox T3 reading (then deleted): labels written, `cadence natural` scored. 58 tests pass.
-  - A research agent is searching for a famous speech with the original recording plus ≥ 3 other public-domain
-    readings (notes: `research_notes/Famous speech renditions/` in the main checkout).
+  - Famous-speaker search (notes: `research_notes/Famous speech renditions/notes.md`, main checkout): no famous
+    speech has more than 1 open re-reading (Day of Infamy, JFK 1961, FDR 1933, Eisenhower 1961). Best option found:
+    Tennyson's own 1890 recording of "The Charge of the Light Brigade" (Wikimedia, public domain; noisy cylinder,
+    use as the famous reference, not in the envelope) plus 17 LibriVox readers (project 9688, Public Domain Mark).
 
 - **2026-10-14 (session 10): remaining web-app ideas from the coaching-methods research (display only; no detector change).**
   - Guide fading: Practice has Full guide / Lighter / Minimal; the default steps down with your practice runs on the
