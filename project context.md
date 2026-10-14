@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: Task 6 — Severity-gradient evidence figures)
+> Last updated: 2026-10-14 (session 10: Task 6 fix round 1 — data-driven titles; captions describe measurements)
 
 ## 1. What this project is
 
@@ -298,6 +298,13 @@ memory pressure.
 - [ ] YouTube video (3–10 min, opening with the section 9 script) and the Devpost page (Track C, all teammates).
 
 ## 8. Change log
+
+- **2026-10-14: Task 6 fix round 1 — data-driven titles; captions describe measurements (session 10).**
+  - `fig_gradient_matching`: title now discovers held-out text IDs from data (no hard-coded range).
+  - Figure A: legend removed; direct endpoint labels remain as the sole identity channel.
+  - `extract_timing_errors` docstring corrected to match actual return value.
+  - README and technical_report captions rewritten to describe what is measured, not comparative claims; hard-coded text-id claims and counts removed.
+  - 9 tests pass.
 
 - **2026-10-14: Task 6 — Severity-gradient evidence figures (session 10).**
   - Added `scripts/gradient_figures.py`: data-driven, re-runnable with one command.

@@ -109,16 +109,16 @@ on T6, B1 scores 15% and B2 5%. The dashboard therefore offers B1 as a calibrate
 ## Evidence
 
 ![Matching score vs severity](docs/figures/gradient_matching_by_severity.png)
-*Matching score (flaw detected with correct type and IoU ≥ 0.5) rises monotonically from severity 1 to 5 for all three methods, confirming the bad-mirror gradient; B2 leads at the higher severities.*
+*Matching score (flaw detected with correct type and IoU ≥ 0.5) vs injected severity for B0, B1 and B2, pooled across held-out texts (faint lines = per-text, bold lines = mean).*
 
 ![Injected effect by flaw type](docs/figures/gradient_by_type.png)
-*Absolute injected effect magnitude (median ± IQR over all texts) is monotone in severity for all six flaw types, validating the data-engineering claim that the synthetic ladder is properly graded.*
+*Absolute injected effect magnitude (median ± IQR across all texts) vs injected severity, one panel per flaw type; shows how large the acoustic change is at each rung of the synthetic ladder.*
 
 ![False-alarm rate B1 vs B2](docs/figures/false_alarms_null_edit.png)
-*False alarms per minute on good-reference pairs and on null-edit clips (PSOLA-resynthesised but unmodified) for B1 and B2 across held-out texts; B2 is lower than B1 on T4 but higher on T2, T3 and T6.*
+*False alarms per minute on good-reference pairs (left) and on null-edit clips — PSOLA-resynthesised but acoustically unmodified (right) — for B1 and B2 across held-out texts; if resynthesis alone triggered the detector the null-edit bars would exceed the good-pair bars.*
 
 ![Label timing error](docs/figures/label_timing_error.png)
-*Histogram of per-clip timing-map error in ms (skewed right, >90% of clips under 50 ms); dashed reference lines show median onset/offset detection error from matched B2 predictions.*
+*Histogram of per-clip timing-map error (ms) for every synthetic clip that has a time map; dashed reference lines show the median onset and offset detection error from B2 matched predictions.*
 
 ## Status and honest deviations from the spec
 

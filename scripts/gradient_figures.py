@@ -91,7 +91,7 @@ def extract_fa_rates(
 
 
 def extract_timing_errors(labels: list[dict]) -> dict:
-    """Return timemap_err_s values and per-text onset/offset medians from ladders.
+    """Return timemap_err_s values (in ms) from every synthetic clip that has one.
 
     Parameters
     ----------
@@ -99,7 +99,9 @@ def extract_timing_errors(labels: list[dict]) -> dict:
 
     Returns
     -------
-    {timemap_err_ms: [float, ...], per_text_onset_ms: {text: v}, per_text_offset_ms: {text: v}}
+    {"timemap_err_ms": [float, ...]}
+        timemap_err_ms: per-clip timing-map error converted to milliseconds,
+        for every row where timemap_err_s is not None.
     """
     errs_ms = [
         float(row["timemap_err_s"]) * 1000.0
@@ -213,11 +215,20 @@ def fig_gradient_matching(by_severity: dict, out_path: Path) -> None:
 
     _apply_style(None)
 
+    # Discover held-out text IDs from data (union across methods, sorted)
+    held_out_texts = sorted(
+        {t for texts in by_severity.values() for t in texts}
+    )
+    text_list = ", ".join(held_out_texts)
+
     fig, ax = plt.subplots(figsize=(5.5, 3.5))
     ax.set_facecolor(_LIGHT_SURFACE)
     ax.set_xlabel("Injected severity", labelpad=6)
     ax.set_ylabel("Matching score", labelpad=6)
-    ax.set_title("Matching score vs injected severity\n(held-out texts T2–T6, pooled)")
+    ax.set_title(
+        f"Matching score vs injected severity\n"
+        f"(held-out texts {text_list}, pooled)"
+    )
     ax.set_xticks([1, 2, 3, 4, 5])
     ax.set_ylim(-0.02, 1.05)
 
@@ -237,7 +248,7 @@ def fig_gradient_matching(by_severity: dict, out_path: Path) -> None:
             ys = [svs[x] for x in xs]
             ax.plot(xs, ys, color=color, alpha=0.15, linewidth=1.0, zorder=1)
 
-        # Pooled mean line
+        # Pooled mean line (no legend= parameter — legend is suppressed)
         mean_ys = [pooled[method].get(sv, float("nan")) for sv in severities]
         ax.plot(
             severities, mean_ys,
@@ -245,7 +256,6 @@ def fig_gradient_matching(by_severity: dict, out_path: Path) -> None:
             linewidth=2.0,
             solid_capstyle="round",
             solid_joinstyle="round",
-            label=label,
             zorder=3,
         )
         # End-point marker (>=8px = r>=4)
@@ -254,7 +264,7 @@ def fig_gradient_matching(by_severity: dict, out_path: Path) -> None:
             color=color, s=60, zorder=5,
             edgecolors=_LIGHT_SURFACE, linewidths=2,
         )
-        # Direct label at last point (relief for aqua sub-3:1 slot)
+        # Direct label at last point (relief for aqua sub-3:1 slot; legend dropped)
         ax.annotate(
             label,
             xy=(severities[-1], mean_ys[-1]),
@@ -263,7 +273,6 @@ def fig_gradient_matching(by_severity: dict, out_path: Path) -> None:
         )
 
     ax.set_xlim(0.8, 6.2)
-    ax.legend(loc="upper left", handlelength=1.2)
 
     ax.spines["left"].set_color("#c3c2b7")
     ax.spines["bottom"].set_color("#c3c2b7")

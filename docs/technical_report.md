@@ -186,16 +186,16 @@ natural takes are all pending; the tools are ready (`cadence human`, `cadence na
 ## 4a. Evidence figures
 
 ![Matching score vs severity](figures/gradient_matching_by_severity.png)
-*Figure 1. Matching score rises monotonically across severities 1–5 for all three methods (pooled held-out texts T2–T6, faint lines = per-text), demonstrating that the bad-mirror gradient is recovered by detection; B2 leads at severities 4–5.*
+*Figure 1. Matching score (type-correct detection with IoU ≥ 0.5) vs injected severity for B0, B1 and B2, pooled across held-out texts (faint lines = per-text, bold = mean).*
 
 ![Injected effect by flaw type](figures/gradient_by_type.png)
-*Figure 2. Absolute injected effect magnitude (median ± IQR, all texts) is monotone in severity for every flaw type, validating the data-engineering claim that each ladder rung is genuinely harder than the one below it.*
+*Figure 2. Absolute injected effect magnitude (median ± IQR across all texts) vs injected severity, one panel per flaw type; shows the acoustic size of the edit at each rung of the synthetic ladder.*
 
 ![False-alarm rate B1 vs B2](figures/false_alarms_null_edit.png)
-*Figure 3. FA/min on good-reference pairs (left) and null-edit clips (right) for B1 vs B2 across held-out texts; null-edit FA equals good-pair FA, confirming the detector does not react to PSOLA resynthesis.*
+*Figure 3. FA/min on good-reference pairs (left) and on null-edit clips — PSOLA-resynthesised but acoustically unmodified (right) — for B1 vs B2 across held-out texts; if PSOLA resynthesis alone triggered the detector, null-edit bars would exceed good-pair bars.*
 
 ![Label timing error](figures/label_timing_error.png)
-*Figure 4. Per-clip timing-map error histogram (ms) with B2 median onset/offset detection error as reference lines; the label pipeline is accurate to within the aligner floor (~30 ms), and detection onset/offset match that precision on matched flaws.*
+*Figure 4. Histogram of per-clip timing-map error (ms) for every synthetic clip with a time map; dashed reference lines show the median onset and offset detection error from B2 matched predictions.*
 
 ## 5. Limitations
 
