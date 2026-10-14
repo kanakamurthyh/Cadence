@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: Task 5 — Benchmark: detector v3 as candidate with pre-registered ship rule)
+> Last updated: 2026-10-14 (session 10: Task 5 fix round 1 — Two-phase ship decision; report relative to shipped detector)
 
 ## 1. What this project is
 
@@ -288,10 +288,13 @@ memory pressure.
 - [ ] Step 5: `cadence evaluate`, robustness, make_demo, `rerun_check --store`, `cadence compare`.
 - [ ] Phone-microphone robustness take.
 - [ ] Improve pace and monotone detection: region-level rate, a stricter good set, WavLM rhythm.
-  (Detector v3 phrase channels implemented; needs the T1 calibration run `Config(phrase=True)` and the ship rule.)
+  (Detector v3 phrase channels implemented; ship rule code done — controller runs `cadence evaluate`.)
+- [ ] Controller: run `nohup uv run cadence evaluate > logs/evaluate_v3.log 2>&1 &` (v3 on dataset v3).
+- [ ] Controller: `nohup uv run python scripts/robustness.py --workers 3` after evaluate completes.
+- [ ] Controller: `uv run python scripts/rerun_check.py --store` and `uv run cadence demo`.
 - [ ] The demo clip's rushed pace is not detected; adjust the 0:50 demo segment or fix pace.
 - [ ] Publish the dataset link separately; generated recordings and human-study assets are not in Git.
-- [ ] W0–W6 of the scoring-push spec (rebuild, dataset v3, Indian texts, detector v3, gradient figures, HF publish, demo).
+- [ ] W4–W6 of the scoring-push spec (gradient figures, HF publish, demo) — pending evaluate run.
 - [ ] YouTube video (3–10 min, opening with the section 9 script) and the Devpost page (Track C, all teammates).
 
 ## 8. Change log
@@ -535,3 +538,26 @@ memory pressure.
     → "v3"; v3 wins T1 but only 1 held-out → "v2"; v3 wins everything but FA cap exceeded on one text
     where v2 is ok → "v2". 35 tests pass, 0 RuntimeWarnings.
   - Long jobs (refs, ladders, evaluate) NOT run by this task; controller runs them.
+- **2026-10-14 (session 10, Task 5 fix round 1): Two-phase ship decision; report relative to shipped detector.**
+  - `cadence/benchmark.py` fully restructured into two phases:
+    - **Phase 1 (decide):** calibrate V3 = `E.Config(phrase=True)` and V2 = `E.Config()` with `full=True`;
+      run each on `["T1", *TEST]`; call `ship_decision`; set `SHIP` / `OTHER`.
+    - **Phase 2 (report):** call `report_configs(SHIP, OTHER)` for METHODS and ABLATIONS; calibrate any
+      new configs (reusing phase-1 params by key); run methods on `["T1", *TEST]` (reuse phase-1 for SHIP/OTHER);
+      run ablations on `TEST` only (reuse phase-1 for OTHER). Every downstream analysis (sweep, equal_fa,
+      natural_spectrum, severity_vs_listeners, params save) uses `SHIP`.
+  - `report_configs(ship, other)`: pure helper returning (METHODS, ABLATIONS).
+    - METHODS: B0, B1 = `replace(ship, k=1)`, B2 = ship (B1's phrase= matches SHIP).
+    - ABLATIONS: K=1/2/4; norm off/zscore; no margin; without relative channels; without stress floor;
+      v1 detector = `replace(ship, relative=False, stress_floor=False, phrase=False)`;
+      "other candidate" row = OTHER. No "K=all" (B2 already shows it).
+  - `ship_decision`: added `_ms()` / `_fa()` helpers — non-finite or None MS counts as v3 loss; non-finite
+    v3 FA counts as FA violation (unless v2 FA is also non-finite). Added `per_text` key to return dict.
+  - `markdown()`: ship decision section now includes a per-text table (text, v3 MS, v2 MS, v3 FA/min, v2 FA/min,
+    outcome). STATUS_NOTE: restored "T3 and T4 are two passages read by the same 19 readers" note; added
+    "T3+T4 can jointly supply two of the required wins."
+  - MAIN module alias kept (no external imports found by grep; kept for documentation).
+  - Tests: 4 new — `test_ship_decision_v3_loses_t1_wins_all_held_out` (T1 loss → "v2");
+    `test_ship_decision_none_nan_handling` (NaN MS = loss, NaN FA = violation);
+    `test_report_configs_ship_v3` (B1 phrase=True, v1 phrase=False, other=v2 row present, no K=all);
+    `test_report_configs_ship_v2` (B1 phrase=False, other=v3 row present). 39 tests pass, 0 warnings.

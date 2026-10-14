@@ -451,3 +451,79 @@ def test_ship_decision_fa_cap_exceeded():
     assert d["ship"] == "v2"
     assert d["fa_violations"] == ["T2"]
     assert "FA cap" in d["reason"]
+
+
+def test_ship_decision_v3_loses_t1_wins_all_held_out():
+    """v3 loses T1 even though it wins all held-out texts → ship v2."""
+    from cadence.benchmark import ship_decision
+    v3 = {"T1": _run(0.45, 0.5), "T2": _run(0.55, 0.8), "T3": _run(0.50, 1.0)}
+    v2 = {"T1": _run(0.50, 0.4), "T2": _run(0.45, 0.9), "T3": _run(0.40, 1.1)}
+    d = ship_decision(v3, v2)
+    assert d["ship"] == "v2"
+    assert d["t1"]["v3_wins"] is False
+    assert set(d["wins"]) == {"T2", "T3"}
+    assert "does not beat" in d["reason"]
+
+
+def test_ship_decision_none_nan_handling():
+    """Non-finite v3 MS counts as a loss; non-finite v3 FA (where v2 is ok) counts as a violation."""
+    import math
+    from cadence.benchmark import ship_decision
+    # T2: v3 MS = NaN (loss), v3 FA = NaN (FA violation since v2 FA = 0.9 <= 2.0)
+    # T3: normal v3 win
+    v3 = {"T1": _run(0.60, 0.5), "T2": _run(float("nan"), float("nan")), "T3": _run(0.50, 1.0)}
+    v2 = {"T1": _run(0.50, 0.4), "T2": _run(0.45, 0.9), "T3": _run(0.40, 1.1)}
+    d = ship_decision(v3, v2)
+    assert d["ship"] == "v2"
+    assert "T2" in d["losses"]
+    assert "T2" in d["fa_violations"]
+    # T3 is a win (v3 0.50 > v2 0.40) but only 1 win total (T2 is a loss)
+    assert d["wins"] == ["T3"]
+
+
+# -- report_configs tests -----------------------------------------------------
+
+def test_report_configs_ship_v3():
+    """When ship=v3 (phrase=True): B1 and all ablations share phrase=True; v1 has phrase=False; other=v2."""
+    import dataclasses
+    from cadence import evaluate as E
+    from cadence.benchmark import report_configs
+    ship = E.Config(phrase=True)
+    other = E.Config()
+    methods, ablations = report_configs(ship, other)
+    # B2 is SHIP
+    assert methods["B2 envelope (K=all), ours"] == ship
+    # B1 carries phrase=True (same as SHIP)
+    b1 = methods["B1 single reference (K=1)"]
+    assert b1.phrase is True and b1.k == 1
+    # No K=all in ablations
+    assert "K=all" not in ablations
+    # v1 row has phrase disabled
+    v1 = ablations["v1 detector (frozen design)"]
+    assert v1.phrase is False and v1.relative is False and v1.stress_floor is False
+    # Other candidate row present and equals OTHER
+    assert "other candidate: v2 detector (no phrase channels)" in ablations
+    assert ablations["other candidate: v2 detector (no phrase channels)"] == other
+    # All ablation rows derived from ship carry phrase=True (except v1 and other)
+    for name, cfg in ablations.items():
+        if name not in ("v1 detector (frozen design)", "other candidate: v2 detector (no phrase channels)"):
+            assert cfg.phrase is True, f"{name}: expected phrase=True"
+
+
+def test_report_configs_ship_v2():
+    """When ship=v2 (phrase=False): B1 has phrase=False; v1 row has phrase=False; other=v3."""
+    import dataclasses
+    from cadence import evaluate as E
+    from cadence.benchmark import report_configs
+    ship = E.Config()  # v2
+    other = E.Config(phrase=True)  # v3
+    methods, ablations = report_configs(ship, other)
+    assert methods["B2 envelope (K=all), ours"] == ship
+    b1 = methods["B1 single reference (K=1)"]
+    assert b1.phrase is False and b1.k == 1
+    assert "K=all" not in ablations
+    assert "other candidate: v3 detector (phrase channels)" in ablations
+    assert ablations["other candidate: v3 detector (phrase channels)"] == other
+    # v1 row has phrase=False (already False for v2 ship, but explicit replace keeps it off)
+    v1 = ablations["v1 detector (frozen design)"]
+    assert v1.phrase is False and v1.relative is False and v1.stress_floor is False
