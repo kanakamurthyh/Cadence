@@ -33,6 +33,8 @@ def main(argv=None):
     sub.add_parser("app", help="Gradio dashboard on :7860")
     sub.add_parser("human", help="listening test and reader ranking on :7861")
     sub.add_parser("api", help="FastAPI on :8000")
+    w = sub.add_parser("web", help="coach web app on http://localhost:8000 (record, analyze, report)")
+    w.add_argument("--port", type=int, default=8000)
     args = ap.parse_args(argv)
 
     def script(name):
@@ -80,6 +82,10 @@ def main(argv=None):
     if args.cmd == "api":
         import uvicorn
         uvicorn.run("cadence.api:app", host="0.0.0.0", port=8000)
+    if args.cmd == "web":
+        import uvicorn
+        print(f"Cadence: open http://localhost:{args.port} (the microphone needs localhost or HTTPS)")
+        uvicorn.run("cadence.web:app", host="127.0.0.1", port=args.port)
 
 
 if __name__ == "__main__":

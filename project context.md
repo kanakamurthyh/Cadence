@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: final documentation pass — dataset v3 results, Indian held-out texts T7/T8, pre-registered v3 decision)
+> Last updated: 2026-10-14 (session 10: coach web app — record with mic permission, analyze, report)
 
 ## 1. What this project is
 
@@ -271,7 +271,8 @@ logs/           run logs
 ```bash
 uv sync --extra dev
 uv run cadence all        # fetch → refs → ladders → evaluate (long: run with nohup, ≤ 3 workers)
-uv run cadence app        # dashboard :7860
+uv run cadence web        # coach web app http://localhost:8000 (mic permission → record → report)
+uv run cadence app        # Gradio research dashboard :7860
 uv run cadence human      # listening test + reader ranking :7861
 uv run cadence analyze file.wav --text T2
 ```
@@ -280,6 +281,9 @@ Long jobs: run with `nohup` and ≤ 3 workers. Earlier sessions were killed (exi
 memory pressure.
 
 ## 7. Pending / next steps
+
+- [ ] Test the coach web app with real users (mic flow, Safari/Firefox recording formats) and collect feedback.
+- [ ] Web app: History/Trends needs ≥ 2 sessions; reports live in the browser (localStorage), A/B audio only until the server restarts.
 
 - [ ] Human reader ranking: 3 teammates rank all readings (`cadence human`), then `cadence refs && cadence ladders`, check with `cadence status`.
 - [ ] Listening test: 5 listeners on the rebuilt ladders (perceived-severity calibration on T1).
@@ -612,3 +616,14 @@ memory pressure.
     `test_ship_decision_none_nan_handling` (NaN MS = loss, NaN FA = violation);
     `test_report_configs_ship_v3` (B1 phrase=True, v1 phrase=False, other=v2 row present, no K=all);
     `test_report_configs_ship_v2` (B1 phrase=False, other=v3 row present). 39 tests pass, 0 warnings.
+- **2026-10-14 (session 10): coach web app (`cadence web`, http://localhost:8000).**
+  - Design canvas approved (Salutis-style palette: cool off-white, blue accent, rose/mist cards, teal/orange/red word dots).
+  - `cadence/web.py` (FastAPI): `/api/texts`, `/api/analyze` (any browser format via ffmpeg; wrong passage → 422 with what was heard),
+    `/api/clip/{session}/{region}/{you|good}` (A/B audio), `/api/recording`, `/api/demo` (live re-run of the T3 demo),
+    `/api/evidence`, `/figures/*`; binds 127.0.0.1 only (audio never leaves the machine).
+  - `cadence/web/` (no build step): Home (stats, latest-session word ring, rubric cards, practise-next, trends),
+    Practice (mic permission card → live level meter → MediaRecorder → review → analyze; denied/unsupported/upload paths),
+    Report (ring, top-priority fix with A/B, rubric, per-feature chart vs good-reader band, flagged-regions table, JSON download),
+    Reports, Passages, Live demo, Evidence, Dataset, Settings. Sessions saved in the browser.
+  - Verified: WebM/Opus upload of the demo clip → same rushed-pace flag (words 126–129), Pacing 7.39, in ~7 s; A/B clips 200;
+    demo IoU 0.975; T3 audio against T7 → 422. Tests: 55 pass (4 new in tests/test_web.py).
