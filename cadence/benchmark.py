@@ -211,6 +211,13 @@ def main(ablations: bool = True) -> dict:
             params[cfg] = E.calibrate(cfg, full=(cfg == SHIP))
             out["params"][cfg.name] = params[cfg].__dict__
 
+    # Save the WINNER's params immediately — before any long downstream work that could crash
+    b1_cfg = dataclasses.replace(SHIP, k=1)
+    params[SHIP].save(PARAMS)
+    b1_params = params[b1_cfg]
+    b1_params.lam = dict(params[SHIP].lam)
+    b1_params.save(PARAMS.with_name("params_B1.json"))
+
     # Run methods on ["T1", *TEST]; reuse phase-1 runs where config matches
     for name, cfg in methods.items():
         if cfg in phase1_runs:
@@ -226,7 +233,6 @@ def main(ablations: bool = True) -> dict:
             else:
                 out["ablations"][name] = {t: E.run(cfg, params[cfg], t) for t in TEST}
 
-    b1_cfg = dataclasses.replace(SHIP, k=1)
     for t in TEST:
         out["sweep"][t] = {n: E.sweep(c, params[c], t) for n, c in
                            [("B1 single reference", b1_cfg), ("B2 envelope", SHIP)]}
@@ -248,12 +254,6 @@ def main(ablations: bool = True) -> dict:
     from .natural import evaluate as natural_eval
     out["natural_flaws"] = natural_eval()
     out["status_note"] = STATUS_NOTE
-
-    # Save the WINNER's params; b1 params carry SHIP's lam for comparable rubric scale
-    params[SHIP].save(PARAMS)
-    b1_params = params[b1_cfg]
-    b1_params.lam = dict(params[SHIP].lam)
-    b1_params.save(PARAMS.with_name("params_B1.json"))
 
     out = json.loads(json.dumps(_r(out)))
     (RESULTS / "results.json").write_text(json.dumps(out, indent=1, sort_keys=True))
@@ -322,10 +322,14 @@ def markdown(o: dict) -> str:
             L += ["\n| Text | v3 MS | v2 MS | v3 FA/min | v2 FA/min | Outcome |",
                   "|---|---|---|---|---|---|"]
             for t, row in sd["per_text"].items():
-                if t in sd["wins"]:
+                fa_viol = t in sd["fa_violations"]
+                ms_win = t in sd["wins"]
+                if fa_viol and ms_win:
+                    outcome = "v3 wins MS, FA cap violated"
+                elif fa_viol:
+                    outcome = "FA cap violated"
+                elif ms_win:
                     outcome = "v3 wins"
-                elif t in sd["fa_violations"]:
-                    outcome = "FA violation"
                 else:
                     outcome = "v2 wins"
                 L.append(f"| {t} | {_f(row['v3_ms'], True)} | {_f(row['v2_ms'], True)} | "
