@@ -1,22 +1,27 @@
-# Cadence dataset v1: data card
+# Cadence dataset v3: data card
+
+Public copy: [huggingface.co/datasets/Vedant1605/cadence-contrastive-speech](https://huggingface.co/datasets/Vedant1605/cadence-contrastive-speech),
+in two subsets with different licences: `public_domain` (T1–T6, T8; LibriVox and NARA) and
+`saa_indian_nc_sa` (T7; CC BY-NC-SA 4.0). Totals from `inventory.json`: 132 recordings,
+443 synthetic clips.
 
 ## Contents
 
 | Folder | What | Count |
 |---|---|---|
-| `refs/<T>/<id>.wav` | Each reading cropped to the text: 16 kHz mono, −23 LUFS | 24 (T1), 23 (T2), 19 (T3), 19 (T4), 2 (T5) |
+| `refs/<T>/<id>.wav` | Each reading cropped to the text: 16 kHz mono, −23 LUFS | 24 (T1), 23 (T2), 19 (T3), 19 (T4), 2 (T5), 17 (T6), 12 (T7), 16 (T8) |
 | `refs/<T>/<id>.json` | Word alignment, snapped word edges, per-word features, reader metadata, aligner confidence | same |
-| `refs/<T>/selection.json` | Reader ranking and the good set (top 6), plus how the ranking was made | 3 |
-| `ladders/<T>/<clip>.wav` | Synthetic clips: 6 flaw types × 2 spans × 5 severities, null-edit copies of every good rendition, compound clips | ~200 |
+| `refs/<T>/selection.json` | Reader ranking and the good set (top 6), plus how the ranking was made | 8 |
+| `ladders/<T>/<clip>.wav` | Synthetic clips: 6 flaw types × 2 spans × 5 severities, null-edit copies of every good rendition, compound clips (dataset v3) | 443: T1 63, T2 65, T3 70, T4 65, T6 65, T7 55, T8 60 |
 | `ladders/<T>/<clip>.json` | Measured alignment and features of the clip; `meta.labels` holds exact word-span labels | same |
-| `ladders/<T>/manifest.json` | Every clip with its source rendition, flaws (type, severity, word span) and labels in clip time | 3 |
+| `ladders/<T>/manifest.json` | Every clip with its source rendition, flaws (type, severity, word span), `dataset_version` and labels in clip time | 7 |
 | `listening/responses.csv` | Listening-test ratings, 0–4: `listener,clip,type,level,rating,source,time` (created by `cadence human`) | pending |
 | `rankings/<T>_ratings.csv`, `rankings/<T>.csv` | Raw 1–10 scores per rater; derived ranks, one column per rater (created by `cadence human`) | pending |
 | `takes/<T>/<speaker>_<T>_take<n>.*` | Teammate readings with natural flaws (test only) | pending |
 | `annotations/<annotator>/<take_id>.txt` | Audacity label files: `start<TAB>end<TAB>flaw_type`, two independent annotators | pending |
-| `labels/labels.jsonl`, `labels/labels.csv` | One row per label, clean reference and null-edit control: file, text, speaker, reference, type, injected (and later perceived) severity, times, word span, original and modified feature values, transformation, licence | 296 rows |
+| `labels/labels.jsonl`, `labels/labels.csv` | One row per label, clean reference and null-edit control: file, text, speaker, reference, type, injected (and later perceived) severity, times, word span, original and modified feature values, transformation, licence | 476 rows |
 | `labels/validation.json` | Automated checks (bounds, time map, duration, direction, clicks, attribution) and the severity distribution | 1 |
-| `inventory.csv`, `inventory.json` | Every recording: source URL, licence, provenance, raw file, crop offset, alignment quality, good-set membership; speaker overlap | 87 rows |
+| `inventory.csv`, `inventory.json` | Every recording: source URL, licence, provenance, raw file, crop offset, alignment quality, good-set membership; speaker overlap | 132 rows |
 | `raw/T5/fdr_original_1941.ogg` | FDR original, Wikimedia Commons, sha1-checked | 1 |
 | `sources/tedx_candidates.csv` | TEDx talks recorded as candidates only (CC BY-NC-ND, not downloaded) | 2 |
 | `consent/` | Consent form template; signed forms for teammate takes | template |
@@ -31,7 +36,7 @@
 | T3 | Gettysburg Address, closing paragraph | 19 LibriVox | Held-out test (oratory) |
 | T4 | Gettysburg Address, opening paragraph | Same 19 readings as T3 | Held-out test (oratory); shares speakers with T3, not with calibration |
 | T5 | FDR "Day of Infamy", opening | FDR original + 1 LibriVox | Held-out test; excluded until ≥ 4 renditions |
-| T6 | Kipling, *If—*, first two stanzas | 15 LibriVox (2 of 17 downloads failed) | **Untouched final test**: added 2026-10-14 after detector v2 was frozen; no speaker shared with any text |
+| T6 | Kipling, *If—*, first two stanzas | 17 LibriVox (15 before the 2026-10-14 rebuild, when 2 downloads failed) | **Untouched final test**: added 2026-10-14 after detector v2 was frozen; no speaker shared with any text |
 | T7 | SAA "Please Call Stella" elicitation | 12 Speech Accent Archive (India-born speakers) | **Held-out Indian-speaker test**: added 2026-10-14 after detector v3 was designed; never used for calibration |
 | T8 | Tagore *Fruit-Gathering* XVIII | 16 LibriVox (project 17632) | **Held-out Indian-speaker test**: added 2026-10-14 after detector v3 was designed; never used for calibration |
 
@@ -95,7 +100,7 @@ audio share processing artifacts.
 | Missing pause | Phrase-boundary silence (≥ 0.3 s) shortened | 20% → 100% removed |
 | Misplaced pause | Room-tone silence inserted between two mid-phrase words | 0.3 → 2.0 s |
 | Monotone | Pitch compressed toward the span median (semitone scale) | 80% → 10% of range kept |
-| Missed emphasis | Pitch above the neighbours' median, and the loudness excess, flattened on one consensus stress point | 80% → 0% of the peak kept |
+| Missed emphasis | Pitch above the neighbours' median, and the loudness excess, flattened on one perceptible consensus stress point (dataset v3) | 80% → 0% of the peak kept |
 | Volume fade | Gain ramp down over the first quarter of the span, held to the end | −3 → −18 dB |
 
 **Label spans:**
@@ -121,10 +126,19 @@ audio share processing artifacts.
 | v2 | Any consensus prominence: ≥ 75 % of good readers have any positive `prom_pitch` or `prom_loud` | `--dataset 2` |
 | v3 | Perceptible consensus stress only: ≥ 75 % of good readers peak by ≥ 1.5 st (pitch) or ≥ 1 dB (loudness) | `--dataset 3` (default) |
 
+Under v3, T3 has 2 emphasis spans, T1/T2/T4/T6 have 1, and T7/T8 have none (the injector found no
+eligible perceptible consensus stress point), so T7 and T8 carry no missed-emphasis clips.
+A from-scratch rebuild of v2 (fetch → refs → ladders) reproduced all 371 v2 label rows with
+identical clip ids and timestamps; 29 rows' measured effect values differed by
+floating-point drift (median 1.4 %, max 21 %).
+
 ## Known limitations
 
 - The good set is provisionally ranked by aligner confidence until the 3-rater human ranking
   exists (see `selection.json` → `method`).
+- T7's good set is chosen by an English aligner's confidence, which is itself accent-sensitive:
+  it contains no Hindi speaker. T8's LibriVox readers are not confirmed Indian-accented, and
+  some also read T1–T4 (`inventory.json` → `speaker_overlap`).
 - Severities are injected levels, not perceived levels, until the listening test is run.
 - LibriVox readers are amateurs; T3 has no recording of the original orator, and none exists.
 - Readings follow slightly different editions of each text. Words a reader changed are

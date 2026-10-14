@@ -1,7 +1,7 @@
 # Project context: Cadence
 
 > Living record of everything done on this project. Updated after every change.
-> Last updated: 2026-10-14 (session 10: Task 6 fix round 1 — data-driven titles; captions describe measurements)
+> Last updated: 2026-10-14 (session 10: final documentation pass — dataset v3 results, Indian held-out texts T7/T8, pre-registered v3 decision)
 
 ## 1. What this project is
 
@@ -74,7 +74,7 @@ falls outside that range. This range is the **consensus envelope**.
 | Flaw injector | Builds "ladders": 6 flaw types × 5 severities injected into a good reading with Praat PSOLA, plus null-edit controls (processed, unchanged) and exact time labels | `cadence/inject.py`, `scripts/build_ladders.py` |
 | Labels and validation | Exports every label and checks timestamps, lengths, clicks and measured effects | `cadence/labels.py` (`cadence labels`) |
 | Calibration | Fits thresholds, margins, severity map and score weights on **T1 only** | `cadence/evaluate.py` |
-| Evaluation | Scores B0 (generic speaking rules), B1 (one reference) and B2 (the envelope) on held-out T2–T4: Matching Score, edge error, false alarms per minute, equal-false-alarm sweep, ablations, robustness | `cadence/benchmark.py`, `scripts/robustness.py` |
+| Evaluation | Scores B0 (generic speaking rules), B1 (one reference) and B2 (the envelope) on T2–T8 (T7/T8 held out): Matching Score, edge error, false alarms per minute, equal-false-alarm sweep, ablations, robustness | `cadence/benchmark.py`, `scripts/robustness.py` |
 | Human studies | Reader ranking (3 raters), listening test (5 listeners), natural takes with annotations | `cadence/human.py` (`cadence human`, port 7861), `cadence/natural.py` |
 | Dashboard / API | Gradio UI (port 7860), FastAPI `POST /analyze`, CLI `cadence …` | `cadence/app.py`, `cadence/api.py`, `cadence/cli.py` |
 | Bookkeeping | Inventory, status checklist, before/after comparison | `cadence inventory`, `cadence status`, `cadence compare` |
@@ -88,12 +88,16 @@ falls outside that range. This range is the **consensus envelope**.
 | T3 | Gettysburg, closing | 19 | Test |
 | T4 | Gettysburg, opening | 19 (same readers as T3) | Test |
 | T5 | FDR "Day of Infamy" | 2 | Blocked: needs ≥ 2 teammate takes |
-| T6 | Kipling, *If—* (2 stanzas) | 15 | **Untouched final test** (added after v2 was frozen; no shared speakers) |
-| T7 | SAA "Please Call Stella" (12 India-born speakers) | 12 | **Held-out Indian** (added after v3 design; CC BY-NC-SA 4.0) |
-| T8 | Tagore *Fruit-Gathering* XVIII (LibriVox 17632) | 16 | **Held-out Indian** (added after v3 design; public domain) |
+| T6 | Kipling, *If—* (2 stanzas) | 17 (15 before the rebuild) | Test; used once for v2, so now development (no shared speakers) |
+| T7 | SAA "Please Call Stella" (12 India-born speakers, 2 each Hindi/Bengali/Telugu/Tamil/Marathi/Malayalam) | 12 | **Held-out Indian** (added after v3 design; evaluated once; CC BY-NC-SA 4.0, separate subset) |
+| T8 | Tagore *Fruit-Gathering* XVIII (LibriVox 17632) | 16 | **Held-out Indian-authored text** (added after v3 design; evaluated once; public domain; readers not confirmed Indian-accented, some also read T1–T4) |
 
-All audio is public domain; TED/TEDx is blocked by its licence. Good readers are still ranked
-provisionally by aligner confidence until the 3-rater human ranking is done.
+All audio is public domain except T7 (CC BY-NC-SA 4.0); TED/TEDx is blocked by its licence. Good
+readers are still ranked provisionally by aligner confidence until the 3-rater human ranking is
+done; for T7 that ranking left out both Hindi speakers. Dataset v3 (default) places missed-emphasis
+targets only at perceptible consensus stress points; 443 synthetic clips in total. Public copy:
+https://huggingface.co/datasets/Vedant1605/cadence-contrastive-speech (`public_domain`,
+`saa_indian_nc_sa`).
 
 ### Detector versions
 
@@ -101,11 +105,11 @@ provisionally by aligner confidence until the 3-rater human ranking is done.
 |---|---|---|
 | v1 | Absolute channels; any positive prominence counts as stress | Frozen in `results/frozen_v1_2026-10-14/`; reproducible with params flags off |
 | **v2 (shipped)** | Adds self-relative pace/monotone channels and perceptible stress points (≥ 1.5 st / 1 dB); rubric λ pooled across dimensions | `data/params.json` (B2) and `data/params_B1.json` (B1 fallback) |
-| v3 (code done, not yet calibrated) | Phrase-level pace (`rate_phr`) and monotone (`pitch_spread_phr`) channels replace the word-level self-relative ones; phrase regions trimmed to the words that deviate themselves | `Params.phrase_channels` / `Config(phrase=True)`; ships only if the Task 5 rule passes |
+| v3 (built, **not shipped by rule**) | Phrase-level pace (`rate_phr`) and monotone (`pitch_spread_phr`) channels replace the word-level self-relative ones; phrase regions trimmed to the words that deviate themselves | `Config(phrase=True)`; lost the pre-registered `benchmark.ship_decision` (T1 38% vs 40%; won only T8) |
 
-v2 helped the development texts (T4 23 → 35% at 0.24 FA/min) but **not** the untouched T6: there
-B2 v2 scores 23% at 2.15 FA/min, against B1 27% and the v1 design 27% at 1.43. Missed emphasis
-is no longer detected (0%).
+On dataset v3, B2 (v2) scores 44/35/40/27/27/28% on T2/T3/T4/T6/T7/T8 (`results/results.md`). It
+beats B1 on T2–T4 and T7, ties T8 and loses T6 (27 vs 29%). Missed emphasis is detected again
+(60/20/0/20% on T2/T3/T4/T6).
 
 ### Using the dashboard correctly
 
@@ -113,7 +117,8 @@ is no longer detected (0%).
   `localhost` or HTTPS, not on `http://<LAN IP>`.
 - The default exercise is **T4** (Gettysburg, opening), with T3 next to it. Poetry (T1/T2/T6)
   is behind "Show research benchmark texts". T5 is shown as pending.
-- The **Demo** tab plays a known rushed-pace edit on T4 and verifies the detection live.
+- The **Demo** tab plays a known rushed-pace edit on T3 ("that we here highly", severity 4) and
+  verifies the detection live (`data/demo/demo_T3.json`).
 - "Comparison method" switches to the B1 single-reference fallback, which uses its own
   calibrated thresholds.
 - Pick the text, read the passage shown on the right **from its first word to its last**
@@ -129,65 +134,56 @@ is no longer detected (0%).
 | Area | Status |
 |---|---|
 | Pipeline: preprocess → align → features → envelope → regions → explain → scores | Done |
-| Dataset: 87 readings (T1 24, T2 23, T3 19, T4 19 = same readings as T3, T5 2) plus 278 synthetic clips (T1–T4) | Built; T5 blocked (< 4 renditions); recordings stay local (gitignored) |
-| Labels export and validation (`cadence labels`), inventory (`cadence inventory`) | Done: 296 label rows; `data/labels/validation.json` |
+| Dataset v3: 132 readings (T1 24, T2 23, T3 19, T4 19 = same readers as T3, T5 2, T6 17, T7 12, T8 16) plus 443 synthetic clips (T1 63, T2 65, T3 70, T4 65, T6 65, T7 55, T8 60) | Built; T5 blocked (< 4 renditions); recordings stay local (gitignored) |
+| Public dataset | https://huggingface.co/datasets/Vedant1605/cadence-contrastive-speech, subsets `public_domain` and `saa_indian_nc_sa`. Repo public; at the time of the docs pass (2026-10-14) the audio upload was still in progress |
+| Labels export and validation (`cadence labels`), inventory (`cadence inventory`) | Done: 476 label rows; `data/labels/validation.json` |
 | Licensing docs, TEDx candidates (not downloaded), consent form | Done (`docs/DATA_LICENSING.md`, `data/sources/`, `data/consent/`) |
 | Baselines B0 (generic norms), B1 (single reference) and B2 (envelope) | Done |
-| Ablations (K, normalization, null-edit margin), τ sweep, robustness | Done |
-| Gradio dashboard (analyze, A/B, dataset explorer, evidence) | Done. Microphone is the default input; uploads are converted to WAV; shows the passage to read; rejects recordings of the wrong text |
+| Detector v3 (phrase channels) vs v2: pre-registered ship rule `benchmark.ship_decision` | Done: **v2 ships** (v3 lost T1 38% vs 40%; won only T8) |
+| Ablations (K, normalization, null-edit margin, relative channels, stress floor, v1 design, other candidate), τ sweep, equal-FA tables | Done |
+| Robustness (noise 20/10 dB, MP3 64k, telephone band, wrong word) | Done on T4, T6, T7 (`results/robustness_T*.json`) |
+| Severity-gradient evidence figures | Done (`scripts/gradient_figures.py` → `docs/figures/`, `results/gradient.json`) |
+| Gradio dashboard (analyze, A/B, dataset explorer, evidence, Demo tab on T3) | Done |
 | FastAPI `POST /analyze`, CLI `cadence …` | Done |
-| Listening-test and reader-ranking tools (`cadence human`) | Built and fixed; running on :7861; **no human data yet** |
+| Listening-test and reader-ranking tools (`cadence human`) | Built; **no human data yet** |
 | Human-data import: perceived-severity calibration, natural takes (`cadence natural`), `cadence status`, `cadence compare` | Done and fixture-tested; awaiting real data |
-| Baseline frozen for before/after comparison | `results/baseline_2026-10-13/` |
-| Technical report, data card, README | Done (`docs/`, `data/DATA_CARD.md`) |
-| Reproducibility (byte-identical reruns, CI workflow, Dockerfile, uv.lock) | Done; rerun check passes |
-| GitHub repo | Public project state pushed to `main`; branch tracks `origin/main` |
+| Frozen results for comparison | `results/baseline_2026-10-13/`, `results/frozen_v1_2026-10-14/`, `results/frozen_v2_2026-10-14/` |
+| Technical report (2,758 words + 4 figures), data card, README | Done for dataset v3 |
+| Reproducibility | From-scratch rebuild reproduced all 371 v2 label rows' clip ids and timestamps; 29 rows' effect sizes drifted (median 1.4%, max 21%); `rerun_check` passes; CI, Dockerfile, uv.lock |
+| GitHub repo | `main` public; this work is on branch `scoring-push` (worktree `Cadence-v3`), not pushed |
 | YouTube video, Devpost page | **Not done** (needs the team) |
 | Stretch: Azure baseline, WavLM rhythm, re-record pilot, LLM rephrasing | Not built |
 
-## 3. Headline results (thresholds fitted on T1 only; T2/T3 held out)
+## 3. Headline results (dataset v3, shipped detector v2; thresholds fitted on T1 only)
 
-| Method | Matching Score T2 / T3 | FA/min good pairs T2 / T3 |
-|---|---|---|
-| B0 generic norms | 18% / 13% | 26.2 / 16.9 |
-| B1 single reference (K=1) | 20% / 18% | 0.68 / 0.15 |
-| **B2 envelope (K=6)** | **30% / 32%** | 1.35 / 1.32 |
+Source: `results/results.md`. MS = Matching Score (type correct, IoU ≥ 0.5); FA = false alarms/min
+on good-vs-good pairs. T2–T6 are development texts; T7/T8 were added after v3 was designed and
+evaluated once.
 
-**Equal false-alarm comparison:** T2 25% vs 20% at 0.68 FA/min; T3 32% vs 22% at 1.32 FA/min;
-tie at T3's strictest point (0.15 FA/min).
+| Text | B0 MS / FA | B1 MS / FA | B2 MS / FA |
+|---|---|---|---|
+| T1 (calib) | 16% / 22.4 | 25% / 0.90 | 40% / 0.90 |
+| T2 | 20% / 26.2 | 33% / 0.90 | 44% / 2.03 |
+| T3 | 13% / 16.9 | 22% / 0.73 | 35% / 1.47 |
+| T4 | 16% / 19.3 | 29% / 0.94 | 40% / 0.24 |
+| T6 | 15% / 22.5 | 29% / 2.15 | 27% / 2.15 |
+| T7 (Indian speakers) | 22% / 25.3 | 22% / 3.38 | 27% / 2.11 |
+| T8 (Tagore) | 10% / 14.5 | 28% / 2.47 | 28% / 2.28 |
 
-**K ablation:** 20 → 20 → 27 → 30% on T2 for K = 1, 2, 4, 6.
+- **Dataset v3 vs v2 (same detector):** B2 T2 40→44%, T3 30→35%, T4 35→40%, T6 23→27%
+  (`results/frozen_v2_2026-10-14/results.md`). Missed-emphasis recall 60/20/0/20% on T2/T3/T4/T6
+  (was 30/0/0/0%).
+- **Ship decision:** v3 vs v2 MS — T1 38 vs 40, T2 35 vs 44, T3 27 vs 35, T4 20 vs 40, T6 27 vs 27,
+  T7 27 vs 27, T8 38 vs 28. v2 ships.
+- **Equal FA (≤ 1/min), B1 vs B2:** T2 33 vs 33, T3 22 vs 20, T4 29 vs 40, T6 16 vs 5, T7 11 vs 13,
+  T8 18 vs 8. The envelope is not universally better; B1 stays as a calibrated fallback.
+- **Robustness (B2, severities 3/5):** clean → 10 dB noise: T4 64→32%, T6 45→23%, T7 39→22%;
+  MP3 64k and wrong word unchanged except T7 MP3 39→33%.
+- **Demo:** T3 rushed pace L4, "that we here highly": B2 IoU 0.975 with 1 flag; B1 misses; B0 19
+  flags, none matching (`data/demo/demo_T3.json`).
 
-**Robustness (T2, severities 3 and 5):**
-
-| Condition | Matching Score |
-|---|---|
-| Clean | 42% |
-| 64 kbps MP3 | 42% |
-| One wrong transcript word | 42% |
-| Noise, 20 dB SNR | 29% |
-| Noise, 10 dB SNR | 21% |
-
-**Known failures:**
-- Pace and monotone are not detected at the shipped operating point.
-- Compound clips are weak: B2 scores 12% on T2, against 38% for B0.
-
-Full tables: `results/results.md`. Raw numbers: `results/results.json`. These compact reports
-are included in the published source snapshot; generated recordings and human-study assets are
-excluded.
-
-**T4 (held out, added in session 5b):**
-
-| Method | Matching Score | FA/min |
-|---|---|---|
-| B0 | 15% | 19.3 |
-| B1 | 17% | 0.47 |
-| B2 | 23% | 1.65 |
-
-- At below 1 FA/min, B2 does not beat B1 on T4 (12% @0.71 vs 17% @0.47).
-- New failure mode: the ladder source sits outside its own envelope, giving 176 flags outside
-  labels.
-- Telephone-band robustness: T2 42 → 29%, T4 33 → 29%.
+Older results: `results/frozen_v2_2026-10-14/` (detector v2 on dataset v2) and
+`results/frozen_v1_2026-10-14/` (v1). Generated recordings and human-study assets are not in Git.
 
 ## 4. Key decisions and why
 
@@ -280,24 +276,39 @@ memory pressure.
 
 ## 7. Pending / next steps
 
-- [ ] Step 0: ≥ 2 (ideally 4) teammates record a rehearsed T5 take → `data/raw/T5/team_<name>_take1.wav` plus a consent form.
-- [ ] Step 1: 3 teammates rank all 102 readings (T1 24, T2 23, T3 19, T4 19, T5 2 + team, T6 15); T1 and T4/T3 first.
-- [ ] Step 2: `cadence refs && cadence ladders`, then check with `cadence status`.
-- [ ] Step 3: 5 listeners take the listening test (on the rebuilt ladders).
-- [ ] Step 4: teammate takes plus 2 independent annotators (protocol in `docs/human_data_protocol.md`).
-- [ ] Step 5: `cadence evaluate`, robustness, make_demo, `rerun_check --store`, `cadence compare`.
-- [ ] Phone-microphone robustness take.
-- [ ] Improve pace and monotone detection: region-level rate, a stricter good set, WavLM rhythm.
-  (Detector v3 phrase channels implemented; ship rule code done — controller runs `cadence evaluate`.)
-- [ ] Controller: run `nohup uv run cadence evaluate > logs/evaluate_v3.log 2>&1 &` (v3 on dataset v3).
-- [ ] Controller: `nohup uv run python scripts/robustness.py --workers 3` after evaluate completes.
-- [ ] Controller: `uv run python scripts/rerun_check.py --store` and `uv run cadence demo`.
-- [ ] The demo clip's rushed pace is not detected; adjust the 0:50 demo segment or fix pace.
-- [ ] Publish the dataset link separately; generated recordings and human-study assets are not in Git.
-- [ ] W4–W6 of the scoring-push spec (gradient figures, HF publish, demo) — pending evaluate run.
-- [ ] YouTube video (3–10 min, opening with the section 9 script) and the Devpost page (Track C, all teammates).
+- [ ] Human reader ranking: 3 teammates rank all readings (`cadence human`), then `cadence refs && cadence ladders`, check with `cadence status`.
+- [ ] Listening test: 5 listeners on the rebuilt ladders (perceived-severity calibration on T1).
+- [ ] Natural takes: teammate recordings plus 2 independent annotators (`docs/human_data_protocol.md`).
+- [ ] T5: ≥ 2 (ideally 4) teammate takes of "Day of Infamy" plus consent forms.
+- [ ] Confirm by listening whether any T8 (Tagore) reader is Indian-accented.
+- [ ] Confirm the Hugging Face audio upload finished (repo is public; upload was in progress during the docs pass).
+- [ ] YouTube video (3–10 min) and the Devpost page (Track C, all teammates).
+- [ ] Merge `scoring-push` into `main` and push (needs the user's go-ahead).
 
 ## 8. Change log
+
+- **2026-10-14 (session 10, scoring push, consolidated): dataset v3, Indian held-out texts, pre-registered v3 decision, final docs.**
+  - **W0 reproducibility:** from-scratch fetch → refs → ladders reproduced all 371 v2 label rows with identical
+    clip ids and timestamps; 29 rows' measured effect values differed (median 1.4%, max 21%). T6 now has 17
+    readings (2 downloads that failed earlier succeeded).
+  - **Dataset v3** (`3cfcd11`, `f6f95ca`): missed-emphasis targets only at perceptible consensus stress points.
+    Fixes the structural 0% emphasis recall (targets the v2 detector could not see).
+  - **Detector v3** (`b0c89f8`…`8f175b8`): phrase-level pace/monotone channels, trimmed to deviating words, behind
+    `Config(phrase=True)`.
+  - **T7/T8** (`9ba5128`, `94cb0e1`): SAA "Please call Stella" (12 India-born speakers, CC BY-NC-SA 4.0) and Tagore
+    *Fruit-Gathering* XVIII (16 LibriVox readers, PD). T7 good set (aligner confidence) has no Hindi speaker.
+  - **Evaluation** (`936fd40`, `f19da7b`, `16bde30`, `bdb5500`, `0ff72c4`): froze v2 results; pre-registered
+    `benchmark.ship_decision` chose **v2** (v3 lost T1 38 vs 40%, won only T8).
+  - **Evidence** (`8ec9cae`, `142dd40`, `6b4e6cd`): four severity-gradient figures, regenerated for dataset v3.
+  - **Robustness and demo** (`bd13b21`, `18ebd08`, `58b7357`): robustness on T4/T6/T7; rerun hashes re-stored;
+    dashboard Demo tab switched to the T3 rushed-pace case (B2 IoU 0.975, B1 miss, B0 19 flags) and
+    `WRONG_WORD` added for T7/T8. This entry also records commit `18ebd08`, whose review finding
+    ("project context.md not updated") was deferred to this pass.
+  - **Published** the dataset at https://huggingface.co/datasets/Vedant1605/cadence-contrastive-speech
+    (subsets `public_domain`, `saa_indian_nc_sa`).
+  - **Docs pass:** README (dataset link, v3 results, T7/T8 data table, reproduction commands), technical report
+    rewritten (2,758 words + 4 figures), DATA_CARD (v3, HF link, counts), this file. Fixed the misleading
+    `exec_module` comment in `tests/test_benchmark.py`.
 
 - **2026-10-14: Task 6 fix round 1 — data-driven titles; captions describe measurements (session 10).**
   - `fig_gradient_matching`: title now discovers held-out text IDs from data (no hard-coded range).

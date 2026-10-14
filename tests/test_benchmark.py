@@ -12,7 +12,8 @@ def test_robustness_wrong_word_coverage():
     robustness_path = Path(__file__).parent.parent / "scripts" / "robustness.py"
     spec = importlib.util.spec_from_file_location("robustness", robustness_path)
     robustness = importlib.util.module_from_spec(spec)
-    # Don't execute the module body (there's an if __name__ guard)
+    # exec_module runs the module's top-level code (imports, constants such as WRONG_WORD);
+    # the `if __name__ == "__main__"` guard keeps the script body (main()) from running.
     spec.loader.exec_module(robustness)
 
     # Find all test texts (except T5)
