@@ -148,8 +148,8 @@ beats B1 on T2–T4 and T7, ties T8 and loses T6 (27 vs 29%). Missed emphasis is
 | Listening-test and reader-ranking tools (`cadence human`) | Built; **no human data yet** |
 | Human-data import: perceived-severity calibration, natural takes (`cadence natural`), `cadence status`, `cadence compare` | Done and fixture-tested; awaiting real data |
 | Frozen results for comparison | `results/baseline_2026-10-13/`, `results/frozen_v1_2026-10-14/`, `results/frozen_v2_2026-10-14/` |
-| Technical report (2,758 words + 4 figures), data card, README | Done for dataset v3 |
-| Reproducibility | From-scratch rebuild reproduced all 371 v2 label rows' clip ids and timestamps; 29 rows' effect sizes drifted (median 1.4%, max 21%); `rerun_check` passes; CI, Dockerfile, uv.lock |
+| Technical report (2,798 words + 4 figures), data card, README | Done for dataset v3 |
+| Reproducibility | From-scratch rebuild reproduced all 371 v2 label rows' clip ids and timestamps; 29 rows' effect sizes drifted (median 1.4%, max 21%) — `results/rebuild_check_2026-10-14.md`; `rerun_check` passes; CI, Dockerfile, uv.lock |
 | GitHub repo | `main` public; this work is on branch `scoring-push` (worktree `Cadence-v3`), not pushed |
 | YouTube video, Devpost page | **Not done** (needs the team) |
 | Stretch: Azure baseline, WavLM rhythm, re-record pilot, LLM rephrasing | Not built |
@@ -242,7 +242,10 @@ Older results: `results/frozen_v2_2026-10-14/` (detector v2 on dataset v2) and
     rule 1, frozen, so results are unchanged. The validator found one T1 span whose word
     attribution is off by one (time correct).
 15. **Speaker leakage.** T1's good set shares no speaker with any test text. Overlaps exist only
-    among non-reference readers (T1–T3/T4: 2) and between test texts (T3–T4: all 19).
+    among non-reference readers (T1–T3/T4: 2) and between test texts (T3–T4: all 19). T8 (Tagore,
+    LibriVox) shares readers with T1 (1: lee ann), T2 (3: bruce kachuk, david lawrence, larry
+    wilson), T3 and T4 (2 each: david lawrence, triciag); `data/inventory.json` → `speaker_overlap`.
+    T6 and T7 share no speaker with any text.
 16. **Regression rule.** Adding a text must leave `data/params.json` and every T1–T3 result
     byte-identical. Verified in session 5b.
 
@@ -255,9 +258,10 @@ cadence/        package: audio, align, features, envelope, detect, inject, pipel
 scripts/        fetch_librivox, build_refs, build_ladders, robustness, make_demo, rerun_check
 data/           demo/, params.json, DATA_CARD.md; raw/, refs/, ladders/, listening/ and
                 rankings/ are generated/local assets and gitignored
-results/        results.json, results.md, robustness.json, rerun_hashes.json
-docs/           technical_report.md
-tests/          test_core.py (8 tests, passing)
+results/        results.json, results.md, robustness_T*.json, gradient.json, rerun_hashes.json,
+                rebuild_check_2026-10-14.md, frozen_v1_/frozen_v2_2026-10-14/
+docs/           technical_report.md, figures/, DATA_LICENSING.md
+tests/          test_core.py, test_benchmark.py, test_figures.py (51 tests, passing)
 logs/           run logs
 ```
 
@@ -265,7 +269,7 @@ logs/           run logs
 
 ```bash
 uv sync --extra dev
-uv run cadence all        # fetch → refs → ladders → evaluate (~40 min, M3)
+uv run cadence all        # fetch → refs → ladders → evaluate (long: run with nohup, ≤ 3 workers)
 uv run cadence app        # dashboard :7860
 uv run cadence human      # listening test + reader ranking :7861
 uv run cadence analyze file.wav --text T2
@@ -287,6 +291,15 @@ memory pressure.
 
 ## 8. Change log
 
+- **2026-10-14 (session 10, Task 8 fix round 1): judge-facing wording.**
+  - DATA_CARD role table matches the README (T2–T4 development, T6 no longer untouched, T8 Indian-authored
+    text with unconfirmed accents). §4.15 lists T8's reader overlaps with T1–T4.
+  - New tracked `results/rebuild_check_2026-10-14.md` (W0 rebuild facts), cited instead of the gitignored ledger.
+  - Report/README: v2 diagnosis figures marked as carried over; equal-FA summary includes T3's slight loss; headline
+    tables note per-method operating points (bold removed where B2 does not win at equal FA); ship rule says
+    "≥ 2 non-calibration texts (T2–T8)" and discloses the T3/T4 shared-reader caveat; 476 rows vs 427 flaw labels.
+  - §5/§6 updated (51 tests, robustness_T*.json, no stale runtime). Report 2,798 words.
+
 - **2026-10-14 (session 10, scoring push, consolidated): dataset v3, Indian held-out texts, pre-registered v3 decision, final docs.**
   - **W0 reproducibility:** from-scratch fetch → refs → ladders reproduced all 371 v2 label rows with identical
     clip ids and timestamps; 29 rows' measured effect values differed (median 1.4%, max 21%). T6 now has 17
@@ -307,7 +320,7 @@ memory pressure.
   - **Published** the dataset at https://huggingface.co/datasets/Vedant1605/cadence-contrastive-speech
     (subsets `public_domain`, `saa_indian_nc_sa`).
   - **Docs pass:** README (dataset link, v3 results, T7/T8 data table, reproduction commands), technical report
-    rewritten (2,758 words + 4 figures), DATA_CARD (v3, HF link, counts), this file. Fixed the misleading
+    rewritten (2,798 words + 4 figures), DATA_CARD (v3, HF link, counts), this file. Fixed the misleading
     `exec_module` comment in `tests/test_benchmark.py`.
 
 - **2026-10-14: Task 6 fix round 1 — data-driven titles; captions describe measurements (session 10).**

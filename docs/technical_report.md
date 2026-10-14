@@ -14,14 +14,15 @@ renditions of the same text, and explains each flag in measured units.
 
 The claim we test is modest: compared with a single reference, the envelope should find more
 injected flaws at an equal false-alarm rate on good-vs-good pairs. We report every result,
-including the ones that do not support it. Every number below is copied from a file in the
-repository, named next to it.
+including the ones that do not support it. Numbers below come from files in the repository, named next to
+them; the v2 diagnosis figures in §3 are carried over from the v2 analysis.
 
 ## 2. Dataset construction
 
 Public dataset: `huggingface.co/datasets/Vedant1605/cadence-contrastive-speech`, subsets
 `public_domain` and `saa_indian_nc_sa`. Totals (`data/inventory.json`): 132 recordings,
-443 synthetic clips, 476 label rows (`data/labels/validation.json`).
+443 synthetic clips, 476 label rows (`data/labels/validation.json`): 427 flaw labels plus
+clean-reference and null-edit rows.
 
 | Text | Readers | Role |
 |---|---|---|
@@ -110,7 +111,8 @@ dynamics, rate and pauses are never z-scored.
 *m_f* is the null-edit measurement margin and *s_f* the median envelope width on T1. Both are
 frozen, so K = 1 is exactly the single-reference baseline B1.
 
-**Detector v2 (shipped).** Root causes diagnosed on T1 only:
+**Detector v2 (shipped).** Root causes diagnosed on T1 only (figures carried over from the v2
+analysis, not re-measured on dataset v3):
 1. **Self-relative pace and monotone channels.** Good readers' overall tempo differs by up to
    1.8×, so the absolute rate envelope was 0.85 log2 wide and a severity-5 rush stuck out by
    only 0.21. Relative to each reader's median the width is 0.31 and the rush sticks out by
@@ -129,8 +131,7 @@ silence for pauses. The dominant feature names the flaw.
 **Severity and scores.** Isotonic map from d to severity, fitted on T1 (to perceived severity
 once the listening test exists). Score = 10·exp(−λ Σ d̄·dur/T).
 
-**Explanations.** Templates filled with measured values only, for example "pause after 'near'
-0.00 s; the good renditions spanned 0.18–0.98". No language model.
+**Explanations.** Templates filled with measured values only; no language model.
 
 **Calibration (T1 only).** One τ per flaw type by coordinate ascent: maximize T1 Matching Score
 subject to ≤ 1 false alarm/min on good-vs-good pairs. B1 gets its own τ by the same rule.
@@ -138,8 +139,9 @@ Nothing is retuned on any other text.
 
 **Pre-registered ship rule.** Before evaluation we coded the choice between v3 and v2 as a
 tested function, `benchmark.ship_decision`: v3 ships only if it beats v2 on T1 **and** on ≥ 2
-held-out texts, without exceeding 2 FA/min on a text where v2 stays under it. The winner's
-parameters are saved automatically; no one picks after seeing the numbers.
+non-calibration texts (T2–T8), without exceeding 2 FA/min on a text where v2 stays under it. The winner's
+parameters are saved automatically. T3 and T4 share readers, so they could jointly have
+supplied both wins; the rule does not correct for that.
 
 ## 4. Results
 
@@ -158,13 +160,14 @@ v3 loses T1 and wins only T8, so **v2 ships**. v3 does lower FA on T2 (0.68 vs 2
 vs 2.15) and T7 (0.84 vs 2.11), but the rule is about detection at the calibrated operating
 point, and we did not change it afterwards.
 
-**Headline (shipped v2 on dataset v3):**
+**Headline (shipped v2 on dataset v3).** Each method is at its own calibrated operating point,
+so FA differs; the equal-FA table follows.
 
 | Text | B0 MS / FA | B1 MS / FA | B2 MS / FA | B2 before (dataset v2) |
 |---|---|---|---|---|
 | T1 (calibration) | 16% / 22.4 | 25% / 0.90 | 40% / 0.90 | 37% / 0.90 |
-| T2 (dev) | 20% / 26.2 | 33% / 0.90 | **44% / 2.03** | 40% / 2.03 |
-| T3 (dev) | 13% / 16.9 | 22% / 0.73 | **35% / 1.47** | 30% / 1.47 |
+| T2 (dev) | 20% / 26.2 | 33% / 0.90 | 44% / 2.03 | 40% / 2.03 |
+| T3 (dev) | 13% / 16.9 | 22% / 0.73 | 35% / 1.47 | 30% / 1.47 |
 | T4 (dev) | 16% / 19.3 | 29% / 0.94 | **40% / 0.24** | 35% / 0.24 |
 | T6 | 15% / 22.5 | **29% / 2.15** | 27% / 2.15 | 23% / 2.15 |
 | **T7 (held out)** | 22% / 25.3 | 22% / 3.38 | **27% / 2.11** | — |
@@ -181,7 +184,8 @@ B2 emphasis recall is now 60 / 20 / 0 / 20% on T2 / T3 / T4 / T6.
 | B2 | 33% | 20% | **40%** | 5% | **13%** | 8% |
 
 At ≤ 0.5 FA/min on T7, B1 scores 0% and B2 13%. **The envelope is not universally better**: it
-wins clearly on T4, slightly on T7, ties T2, and loses T6 and T8 at tight budgets.
+wins clearly on T4 and slightly on T7, ties T2, loses slightly on T3 (22% vs 20%) and clearly on
+T6 and T8.
 
 **Per flaw (B2 recall, T2 / T3 / T4 / T6 / T7 / T8):**
 
@@ -209,7 +213,7 @@ T7 at 1.77/min.
 
 **Ablations** (MS T2 / T3 / T4 / T6 / T7 / T8): K = 1: 33 / 22 / 29 / 29 / 22 / 28%; K = 4:
 40 / 28 / 33 / 31 / 31 / 24%; K = all (B2): 44 / 35 / 40 / 27 / 27 / 28%. More references help on
-the development texts; K = 4 beats K = all on T6 and T7. z-score normalization (v1):
+T2–T4; K = 4 beats K = all on T6 and T7. z-score normalization (v1):
 25 / 28 / 29 / 29 / 18 / 30%. Compound clips, B2: 88 / 50 / 50 / 25 / 62 / 62%.
 
 **Robustness** (B2, severities 3 and 5; `results/robustness_T4.json`, `_T6`, `_T7`):
@@ -232,11 +236,8 @@ reruns this detection live.
 **Reproducibility.** A from-scratch rebuild (fetch → refs → ladders) reproduced all 371
 dataset-v2 label rows with identical clip ids and timestamps. 29 rows' measured effect sizes
 differed (median 1.4%, max 21%) through floating-point drift in resynthesis and measurement
-(`.superpowers/sdd/…/progress.md`, W0). Analysis output is sorted, rounded JSON with a SHA-256
+(`results/rebuild_check_2026-10-14.md`). Analysis output is sorted, rounded JSON with a SHA-256
 hash and reruns byte-identically (`scripts/rerun_check.py`, CI). Environment: `uv.lock`, Docker.
-
-**Human data.** Reader ranking, listening test and annotated natural takes are pending; tools
-are ready (`cadence human`, `cadence natural`).
 
 ## 4a. Evidence figures
 
@@ -265,7 +266,8 @@ are ready (`cadence human`, `cadence natural`).
   wide, and a source reader's own style shows up as flags (T7: 1.77 edit-attributable FA/min).
 - **Small samples:** 55–70 clips per text and 6 good readers; differences of 5–10 points are
   within noise. T3 and T4 share all 19 readers.
-- **Synthetic flaws only, injected severity** until the listening test and natural takes exist.
+- **Synthetic flaws only, injected severity** until the listening test and natural takes exist;
+  the tools are ready (`cadence human`, `cadence natural`).
 - **Not built:** Azure baseline, WavLM rhythm, re-record pilot.
 
 ## 6. Reproduce

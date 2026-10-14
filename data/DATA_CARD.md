@@ -32,13 +32,13 @@ in two subsets with different licences: `public_domain` (T1–T6, T8; LibriVox a
 | Text | Passage | Renditions | Role |
 |---|---|---|---|
 | T1 | *Sea Fever* | 24 LibriVox | Calibration only |
-| T2 | *Stopping by Woods* | 23 LibriVox | Held-out test |
-| T3 | Gettysburg Address, closing paragraph | 19 LibriVox | Held-out test (oratory) |
-| T4 | Gettysburg Address, opening paragraph | Same 19 readings as T3 | Held-out test (oratory); shares speakers with T3, not with calibration |
-| T5 | FDR "Day of Infamy", opening | FDR original + 1 LibriVox | Held-out test; excluded until ≥ 4 renditions |
-| T6 | Kipling, *If—*, first two stanzas | 17 LibriVox (15 before the 2026-10-14 rebuild, when 2 downloads failed) | **Untouched final test**: added 2026-10-14 after detector v2 was frozen; no speaker shared with any text |
-| T7 | SAA "Please Call Stella" elicitation | 12 Speech Accent Archive (India-born speakers) | **Held-out Indian-speaker test**: added 2026-10-14 after detector v3 was designed; never used for calibration |
-| T8 | Tagore *Fruit-Gathering* XVIII | 16 LibriVox (project 17632) | **Held-out Indian-speaker test**: added 2026-10-14 after detector v3 was designed; never used for calibration |
+| T2 | *Stopping by Woods* | 23 LibriVox | Development test |
+| T3 | Gettysburg Address, closing paragraph | 19 LibriVox | Development test (oratory) |
+| T4 | Gettysburg Address, opening paragraph | Same 19 readings as T3 | Development test (oratory); **not independent of T3** (same readers), none shared with calibration |
+| T5 | FDR "Day of Infamy", opening | FDR original + 1 LibriVox | **Blocked** until ≥ 4 renditions |
+| T6 | Kipling, *If—*, first two stanzas | 17 LibriVox (15 before the 2026-10-14 rebuild, when 2 downloads failed) | Test; used once for v2, so no longer untouched; no speaker shared with any text |
+| T7 | SAA "Please Call Stella" elicitation | 12 Speech Accent Archive (India-born speakers) | **Held-out Indian-speaker test (Speech Accent Archive)**: added 2026-10-14 after detector v3 was designed; evaluated once; never used for calibration |
+| T8 | Tagore *Fruit-Gathering* XVIII | 16 LibriVox (project 17632) | **Held-out Indian-authored text** (readers not confirmed Indian-accented): added 2026-10-14 after detector v3 was designed; evaluated once; never used for calibration |
 
 No speaker in T1's good set (the only T1 audio calibration uses) appears in any test text.
 `cadence inventory` checks this.
@@ -130,7 +130,7 @@ Under v3, T3 has 2 emphasis spans, T1/T2/T4/T6 have 1, and T7/T8 have none (the 
 eligible perceptible consensus stress point), so T7 and T8 carry no missed-emphasis clips.
 A from-scratch rebuild of v2 (fetch → refs → ladders) reproduced all 371 v2 label rows with
 identical clip ids and timestamps; 29 rows' measured effect values differed by
-floating-point drift (median 1.4 %, max 21 %).
+floating-point drift (median 1.4 %, max 21 %); see `results/rebuild_check_2026-10-14.md`.
 
 ## Known limitations
 

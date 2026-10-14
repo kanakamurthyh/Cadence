@@ -71,7 +71,7 @@ Individual steps:
 | **T7** | Speech Accent Archive "Please call Stella": 12 India-born speakers, 2 each with Hindi, Bengali, Telugu, Tamil, Marathi, Malayalam L1 | 12 | **Held out, Indian-accented English**; CC BY-NC-SA 4.0, separate subset |
 | **T8** | Tagore, *Fruit-Gathering* XVIII. LibriVox project 17632 | 16 | **Held out, Indian-authored text**; public domain |
 
-T7 and T8 were added after detector v3 was designed and evaluated once. Licences in
+T7 and T8 were added after detector v3 was designed; each was evaluated once. Licences in
 [`docs/DATA_LICENSING.md`](docs/DATA_LICENSING.md). TED/TEDx (CC BY-NC-ND) is listed as
 candidates only.
 
@@ -94,12 +94,13 @@ least 3/4 of the good readers peak perceptibly (≥ 1.5 st or ≥ 1 dB). Each di
 
 Full tables: `results/results.md`. Before this dataset fix: `results/frozen_v2_2026-10-14/`
 (and v1 in `results/frozen_v1_2026-10-14/`). Matching Score (MS) = correct type and IoU ≥ 0.5;
-FA = false alarms per minute on good-vs-good pairs.
+FA = false alarms per minute on good-vs-good pairs. Each method is shown at its own calibrated
+operating point, so FA differs between columns; the equal-FA comparison is the bullet below.
 
 | Text | B0 generic norms MS / FA | B1 single reference | B2 envelope (ours) |
 |---|---|---|---|
-| T2 (dev) | 20% / 26.2 | 33% / 0.90 | **44% / 2.03** |
-| T3 (dev) | 13% / 16.9 | 22% / 0.73 | **35% / 1.47** |
+| T2 (dev) | 20% / 26.2 | 33% / 0.90 | 44% / 2.03 |
+| T3 (dev) | 13% / 16.9 | 22% / 0.73 | 35% / 1.47 |
 | T4 (dev) | 16% / 19.3 | 29% / 0.94 | **40% / 0.24** |
 | T6 | 15% / 22.5 | **29% / 2.15** | 27% / 2.15 |
 | **T7 Indian speakers (held out)** | 22% / 25.3 | 22% / 3.38 | **27% / 2.11** |
@@ -110,10 +111,12 @@ FA = false alarms per minute on good-vs-good pairs.
   recall is 60 / 20 / 0 / 20% on T2 / T3 / T4 / T6 (0% on T3, T4 and T6 before). B2 rose on every
   development text: T2 40→44%, T3 30→35%, T4 35→40%, T6 23→27%.
 - **Detector v3 (phrase channels) lost the pre-registered ship rule** (`benchmark.ship_decision`:
-  beat v2 on T1 and ≥ 2 held-out texts). T1: 38% vs 40%; it won only T8 (38% vs 28%). v2 ships;
+  beat v2 on T1 and on ≥ 2 non-calibration texts, T2–T8; T3 and T4 share readers, so they could
+  jointly have supplied both wins). T1: 38% vs 40%; it won only T8 (38% vs 28%). v2 ships;
   phrase channels remain behind `Config(phrase=True)`.
 - **The envelope is not universally better.** At ≤ 1 FA/min B2 beats B1 on T4 (40% vs 29%) and
-  T7 (13% vs 11%) but not on T6 (5% vs 16%) or T8 (8% vs 18%). The dashboard offers B1 as a
+  T7 (13% vs 11%), ties T2 (33%), and loses slightly on T3 (20% vs 22%) and clearly on T6
+  (5% vs 16%) and T8 (8% vs 18%). The dashboard offers B1 as a
   calibrated fallback ("Comparison method").
 
 | Detection (B2, recall T2–T8) | Status |
@@ -150,7 +153,7 @@ highly", is found by B2 with IoU 0.975 and 1 flag. B1 misses it; B0 raises 19 fl
   (`scripts/rerun_check.py`, hashes in `results/rerun_hashes.json`).
 - A from-scratch rebuild (fetch → refs → ladders) reproduced all 371 dataset-v2 label rows with
   identical clip ids and timestamps; 29 rows' measured effect sizes differed by floating-point
-  drift (median 1.4%, max 21%).
+  drift (median 1.4%, max 21%); see `results/rebuild_check_2026-10-14.md`.
 
 ## Status and honest deviations from the spec
 
